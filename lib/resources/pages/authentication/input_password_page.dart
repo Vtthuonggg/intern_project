@@ -6,7 +6,6 @@ import 'package:flutter_app/app/events/login_event.dart';
 import 'package:flutter_app/app/models/user.dart';
 import 'package:flutter_app/app/networking/auth_api_service.dart';
 import 'package:flutter_app/app/utils/message.dart';
-import 'package:flutter_app/app/utils/utils.dart';
 import 'package:flutter_app/resources/pages/authentication/confirm_otp_register_page.dart';
 import 'package:flutter_app/resources/pages/custom_toast.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -145,15 +144,12 @@ class _InputPasswordPageState extends NyState<InputPasswordPage>
 
     try {
       User user = await api<AuthApiService>((request) => request.login(data));
-      if (user.businessId == null) {
-        showChooseCareerPopup(context, user, false);
-      } else {
-        event<LoginEvent>(data: {
-          'user': user,
-        });
 
-        await getFCMTokenAndSave();
-      }
+      event<LoginEvent>(data: {
+        'user': user,
+      });
+
+      await getFCMTokenAndSave();
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
         setState(() {
@@ -189,8 +185,6 @@ class _InputPasswordPageState extends NyState<InputPasswordPage>
               description: 'Đăng ký thành công!');
 
           await getFCMTokenAndSave();
-
-          showChooseCareerPopup(context, user, false);
         } catch (e) {
           _errorMessage = getResponseError(e);
         } finally {
@@ -233,7 +227,6 @@ class _InputPasswordPageState extends NyState<InputPasswordPage>
           try {
             CustomToast.showToastSuccess(context,
                 description: 'Đăng ký thành công!');
-            showChooseCareerPopup(context, user, false);
           } catch (e) {
             _errorMessage = getResponseError(e);
           } finally {
@@ -735,22 +728,6 @@ class _InputPasswordPageState extends NyState<InputPasswordPage>
                                 ? 20
                                 : (MediaQuery.of(context).size.height / 2) -
                                     145),
-                      Column(
-                        children: [
-                          Image(
-                              image:
-                                  AssetImage(getImageAsset('ic_shield.png'))),
-                          SizedBox(height: 5),
-                          Text(
-                            'An toàn & bảo mật',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -96,6 +98,7 @@ class _LoginEmployeePageState extends NyState<LoginPageNew> {
         });
       }
     } catch (e) {
+      log(e.toString());
     } finally {
       setState(() {
         _isLoading = false;
@@ -334,21 +337,6 @@ class _LoginEmployeePageState extends NyState<LoginPageNew> {
                                       'Tiếp tục',
                                       style: TextStyle(fontSize: 18),
                                     )),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 200),
-                  Column(
-                    children: [
-                      Image(image: AssetImage(getImageAsset('ic_shield.png'))),
-                      SizedBox(height: 5),
-                      Text(
-                        'An toàn & bảo mật',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],

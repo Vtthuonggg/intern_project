@@ -16,7 +16,7 @@ class User extends Model {
   DateTime? createdAt;
   num? money;
   num? moneySub;
-  int? businessId;
+  int businessId = 2;
   CareerType careerType = CareerType.other;
   int usingDays = 0;
   dynamic miniApp;
@@ -50,7 +50,6 @@ class User extends Model {
     createdAt = data['created_at'] != null
         ? DateTime.parse(data['created_at'])
         : DateTime.now();
-    businessId = data['business_id'];
     isManager = data['is_management'] ?? false;
     apiKey = data['api_key'];
     seri = data['seri'];
@@ -77,8 +76,6 @@ class User extends Model {
         "created_at": createdAt?.toString(),
         'business_id': businessId,
       };
-
-  get editProductPath => careerType.editProductPath();
 
   bool get showWholeSale =>
       [6, 7, 8, 9, 10, 11, 17, 19, 20, 21].contains(businessId);
@@ -118,13 +115,6 @@ enum CareerType {
 }
 
 extension CareerTypeExtension on CareerType {
-  String editProductPath() {
-    switch (this) {
-      default:
-        return EditProductPage.path;
-    }
-  }
-
   List<DashboardItem> get dashboardItems {
     switch (this) {
       case CareerType.other: // Kiểu tạo đơn bán hàng

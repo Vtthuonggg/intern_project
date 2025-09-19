@@ -1,5 +1,3 @@
-import 'package:flutter_app/app/networking/account_api.dart';
-
 import '/app/providers/auth_provider.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 import '/app/providers/app_provider.dart';

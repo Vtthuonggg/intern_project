@@ -1,27 +1,99 @@
 {
   "project_info": {
-    "project_number": "565207060593",
-    "firebase_url": "https://bate-cinemas-default-rtdb.firebaseio.com",
-    "project_id": "bate-cinemas",
-    "storage_bucket": "bate-cinemas.appspot.com"
+    "project_number": "296289207113",
+    "project_id": "aibat-99db7",
+    "storage_bucket": "aibat-99db7.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:565207060593:android:10719965be6a25074e8bd0",
+        "mobilesdk_app_id": "1:296289207113:android:83d6dacda12468b643d098",
         "android_client_info": {
-          "package_name": "com.batecinema.app"
+          "package_name": "com.aibat.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "296289207113-87etojb71qe6p3khj3211h2k55ba0bji.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aibat.app",
+            "certificate_hash": "2d5d37fae8b2233f1bada3accd93f8e31d1130e8"
+          }
+        },
+        {
+          "client_id": "296289207113-8otifdsoee23jvft57kasveci1gjs4fl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aibat.app",
+            "certificate_hash": "6e26b5289fb50fcc20c9d23c7d24cd35d49046b9"
+          }
+        },
+        {
+          "client_id": "296289207113-eo3ssioia33ea996t8jta5ksgm4msi6q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aibat.app",
+            "certificate_hash": "d31c0ee369752036eb75afae5b97cf74c4a73058"
+          }
+        },
+        {
+          "client_id": "296289207113-lkufsvuhc07be5g4tccnii9addu805re.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aibat.app",
+            "certificate_hash": "ca0552d055c2032ffd0a92891cde0734abf94988"
+          }
+        },
+        {
+          "client_id": "296289207113-m7aqn7gfbou0i5dm7dv5283op34cfrma.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aibat.app",
+            "certificate_hash": "eedb53d42ce1bda61d6b7a13063c786d2b7b0d3e"
+          }
+        },
+        {
+          "client_id": "296289207113-ng04qrc035vftfqal7cl5tqhciqh6fh2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aibat.app",
+            "certificate_hash": "e05f0933f3f515e7f5bd324eeca663f493a71b1b"
+          }
+        },
+        {
+          "client_id": "296289207113-s1sff2b4ad5gkkqe1po3qdcbnoidufrk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aibat.app",
+            "certificate_hash": "036db44bdeb2ff08e8559ab281dcd97ac9b3abaf"
+          }
+        },
+        {
+          "client_id": "296289207113-i311nl2d75pa6ev3anbt9nvdu12a5rge.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyDpdAF4oz7WSqTKvS8HqJK5qy_rJsYdHDk"
+          "current_key": "AIzaSyC30NhenvJpAuAbYsMSbtJl0JCGBhVmBsY"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "296289207113-i311nl2d75pa6ev3anbt9nvdu12a5rge.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "296289207113-manmdbmppr80crhnukhsith278pn92qm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.tungnt.app"
+              }
+            }
+          ]
         }
       }
     }

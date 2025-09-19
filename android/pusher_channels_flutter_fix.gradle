@@ -1,0 +1,18 @@
+subprojects { subproject ->
+    if (subproject.name == 'pusher_channels_flutter') {
+        subproject.afterEvaluate {
+            // Remove the package attribute from the AndroidManifest.xml
+            def manifestFile = file("${subproject.projectDir}/src/main/AndroidManifest.xml")
+            if (manifestFile.exists()) {
+                def manifestContent = manifestFile.text
+                manifestContent = manifestContent.replaceAll('package="com.pusher.channels_flutter"', '')
+                manifestFile.text = manifestContent
+            }
+
+            // Add the namespace property to build.gradle
+            subproject.android {
+                namespace = 'com.pusher.channels_flutter'
+            }
+        }
+    }
+}

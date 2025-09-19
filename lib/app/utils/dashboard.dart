@@ -118,7 +118,6 @@ extension DashboardItemExtension on DashboardItem {
 
 List<DashboardItem> getDashboardItems() {
   int? userType = Auth.user<User>()?.type;
-  log(userType.toString());
   switch (userType) {
     case 2:
       return [

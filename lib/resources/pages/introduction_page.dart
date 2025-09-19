@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
 import 'package:flutter_app/resources/pages/custom_toast.dart';
-import 'package:flutter_app/resources/widgets/qr_scanner.dart';
 import 'package:intro_slider/intro_slider.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 import '/app/controllers/controller.dart';
@@ -85,17 +84,6 @@ class _IntroductionPageState extends NyState<IntroductionPage> {
     }
   }
 
-  void _openQRScanner() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QRScannerWidget(
-          onQRCodeScanned: _handleQRCodeScanned,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,32 +151,6 @@ class _IntroductionPageState extends NyState<IntroductionPage> {
                           ),
                         ),
                       ),
-
-                      SizedBox(width: 5),
-
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color: ThemeColor.get(context).primaryAccent,
-                              width: 1),
-                          color: Colors.white,
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(8),
-                            onTap: _openQRScanner,
-                            child: Icon(
-                              Icons.qr_code_scanner,
-                              color: ThemeColor.get(context).primaryAccent,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -239,26 +201,6 @@ class _IntroductionPageState extends NyState<IntroductionPage> {
                 ),
                 SizedBox(
                   height: 30,
-                ),
-                Column(
-                  children: [
-                    Align(
-                        alignment: Alignment.center,
-                        child: Image(
-                            image: AssetImage(getImageAsset('ic_shield.png')))),
-                    SizedBox(height: 5),
-                    Align(
-                      alignment: Alignment.center,
-                      child: Text(
-                        'An toàn & bảo mật',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
                 SizedBox(height: 30),
               ],

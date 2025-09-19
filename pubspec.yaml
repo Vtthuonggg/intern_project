@@ -144,12 +144,8 @@ flutter:
   assets:
     - public/assets/fonts/
     - public/assets/images/
-    - public/assets/images/svg/
     - public/assets/images/intro/
-    - public/assets/images/test/
     - public/assets/app_icon/
-    - assets/sounds/
-    - assets/cfg/
     - lang/
     - .env
 # An image asset can refer to one or more resolution-specific "variants", see

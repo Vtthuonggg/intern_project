@@ -1,7 +1,8 @@
+import 'package:flutter_app/app/networking/auth_api_service.dart';
 import 'package:flutter_app/app/networking/dio/base_api_service.dart';
-import 'package:flutter_app/app/networking/account_api.dart';
+import 'package:flutter_app/app/networking/product_api_service.dart';
+import 'package:flutter_app/app/networking/user_api_service.dart';
 import '/app/models/user.dart';
-import '/app/networking/api_service.dart';
 
 /* Model Decoders
 |--------------------------------------------------------------------------
@@ -29,10 +30,9 @@ final Map<Type, dynamic> modelDecoders = {
 |-------------------------------------------------------------------------- */
 
 final Map<Type, BaseApiService> apiDecoders = {
-  ApiService: ApiService(),
-  AccountApi: AccountApi(),
-
-  // ...
+  AuthApiService: AuthApiService(),
+  UserApiService: UserApiService(),
+  ProductApiService: ProductApiService(),
 };
 
 
