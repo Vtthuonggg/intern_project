@@ -1,43 +1,21 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:collection/collection.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:draggable_fab/draggable_fab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_app/app/models/product.dart';
-import 'package:flutter_app/app/models/store.dart';
-import 'package:flutter_app/app/models/user.dart';
-import 'package:flutter_app/app/networking/branch_api.dart';
 import 'package:flutter_app/app/networking/product_api_service.dart';
 import 'package:flutter_app/app/utils/formatters.dart';
 import 'package:flutter_app/app/utils/getters.dart';
 import 'package:flutter_app/app/utils/message.dart';
-import 'package:flutter_app/app/utils/permission.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
-import 'package:flutter_app/config/storage_keys.dart';
-import 'package:flutter_app/resources/pages/category/category_page.dart';
-import 'package:flutter_app/resources/pages/category/edit_category_page.dart';
 import 'package:flutter_app/resources/pages/custom_toast.dart';
-import 'package:flutter_app/resources/pages/brand/brand_page.dart';
-import 'package:flutter_app/resources/pages/product/downloading_service.dart';
-import 'package:flutter_app/resources/pages/product/create_bulk_product_page.dart';
-import 'package:flutter_app/resources/pages/product/detail_product_page.dart';
-import 'package:flutter_app/resources/pages/product/edit_product_page.dart';
-import 'package:flutter_app/resources/pages/product/edit_product_service_page.dart';
-import 'package:flutter_app/resources/pages/supplier/edit_supplier_page.dart';
-import 'package:flutter_app/resources/pages/supplier/supplier_page.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:form_builder_file_picker/form_builder_file_picker.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:nylo_framework/nylo_framework.dart';
-import 'package:permission_handler/permission_handler.dart';
-
-import '../../../app/utils/text.dart';
 
 class ListProductPage extends NyStatefulWidget {
   static const path = '/list-product';
@@ -58,33 +36,13 @@ class _ListProductPageState extends NyState<ListProductPage> {
   int _pageSize = 20;
 
   dynamic _total;
-  int storeId = -1;
   Timer? _debounce;
   bool _isBulkDeleteMode = false;
   List<dynamic> _selectedProductIds = [];
-  List<Store> _stores = [];
-  Store? selectedStore;
   bool _isLoading = false;
   @override
   void init() async {
     super.init();
-    storeId = await Backpack.instance.read(StorageKey.storeId) ?? -1;
-    if (storeId == -1) {
-      fetchBranches();
-    } else {
-      getSelectedStoreFrom();
-    }
-  }
-
-  bool isSameStore() {
-    return storeId == (selectedStore?.id ?? -1);
-  }
-
-  bool canEdit() {
-    if (storeId != -1) {
-      return selectedStore?.id == storeId;
-    }
-    return storeId == -1;
   }
 
   _debounceSearch() {
@@ -115,31 +73,24 @@ class _ListProductPageState extends NyState<ListProductPage> {
       _fetchProducts(pageKey);
     });
     super.initState();
-    // IsolateNameServer.registerPortWithName(
-    //     _receivePort.sendPort, DownloadingService.downloadingPortName);
-    // FlutterDownloader.registerCallback(DownloadingService.downloadingCallBack);
-    // _receivePort.listen((message) {
-    //   List<dynamic> result = List<dynamic>.from(message as List);
-    //   if (result[1] == 3 && result[2] == 100) {
-    //     CustomToast.showToastSuccess(context,
-    //         description: "Tải file mẫu thành công");
-    //   }
-    // });
   }
 
   @override
   void dispose() {
     _pagingController.dispose();
-    // _receivePort.close();
     super.dispose();
   }
 
   _fetchProducts(int pageKey) async {
     _isLoading = true;
     try {
-      Map<String, dynamic> newItems = await api<ProductApiService>((request) =>
-          request.listProductNew(searchQuery, pageKey, _pageSize, 1,
-              storeId: selectedStore?.id));
+      Map<String, dynamic> newItems =
+          await api<ProductApiService>((request) => request.listProductNew(
+                searchQuery,
+                pageKey,
+                _pageSize,
+                1,
+              ));
       setState(() {
         _total = newItems['meta'];
         List<Product> products = [];
@@ -180,7 +131,7 @@ class _ListProductPageState extends NyState<ListProductPage> {
                   ThemeColor.get(context).primaryAccent, // Navigation bar
             ),
             title: Text(
-              text('list_product_title', 'Quản lý sản phẩm'),
+              'Quản lý sản phẩm',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
               ),
@@ -205,34 +156,6 @@ class _ListProductPageState extends NyState<ListProductPage> {
                     ),
                   ),
                 )
-              else ...[
-                if (hasAnyPermission(['view_all_supplier']))
-                  IconButton(
-                    icon: SvgPicture.asset(
-                      getImageAsset('svg/supplier.svg'),
-                      width: 24,
-                      height: 24,
-                      colorFilter: ColorFilter.mode(
-                          Theme.of(context).colorScheme.onPrimary,
-                          BlendMode.srcIn),
-                    ),
-                    onPressed: () {
-                      routeTo(SupplierPage.path);
-                    },
-                  ),
-                if (hasAnyPermission(['view_all_category']))
-                  IconButton(
-                    icon: Icon(Icons.category),
-                    onPressed: () {
-                      routeTo(CategoryPage.path);
-                    },
-                  ),
-                IconButton(
-                    onPressed: () {
-                      routeTo(BrandPage.path);
-                    },
-                    icon: Icon(FontAwesomeIcons.tag))
-              ]
             ]),
         floatingActionButton: DraggableFab(
           securityBottom: 60,
@@ -244,18 +167,6 @@ class _ListProductPageState extends NyState<ListProductPage> {
             backgroundColor: Colors.white,
             foregroundColor: ThemeColor.get(context).primaryAccent,
             children: [
-              if (Auth.user<User>()?.allowCreateBulkProduct == true)
-                SpeedDialChild(
-                  child: const Icon(FontAwesomeIcons.folderPlus),
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  label: 'Thêm nhanh ${text('_product_title', 'sản phẩm')}',
-                  onTap: () {
-                    routeTo(CreateBulkProductPage.path, onPop: (value) {
-                      _pagingController.refresh();
-                    });
-                  },
-                ),
               SpeedDialChild(
                 child: const Icon(FontAwesomeIcons.plus),
                 backgroundColor: Colors.green,
@@ -275,10 +186,6 @@ class _ListProductPageState extends NyState<ListProductPage> {
         ),
         body: Column(
           children: [
-            if (_stores.length > 1)
-              buildSelectSrores()
-            else
-              SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.only(left: 15, right: 15),
               child: TextField(
@@ -289,7 +196,7 @@ class _ListProductPageState extends NyState<ListProductPage> {
                   });
                 },
                 decoration: InputDecoration(
-                  labelText: "Tìm kiếm ${text('_product_title', 'sản phẩm')}",
+                  labelText: "Tìm kiếm sản phẩm",
                   prefixIcon: Icon(
                     Icons.search,
                     color: Colors.grey,
@@ -333,73 +240,6 @@ class _ListProductPageState extends NyState<ListProductPage> {
             ),
           ],
         ));
-  }
-
-  Widget buildSelectSrores() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-      height: 35,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.store,
-            color: ThemeColor.get(context).primaryAccent,
-            size: 22,
-          ),
-          SizedBox(width: 8),
-          Expanded(
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _stores.length,
-              itemBuilder: (context, index) {
-                final store = _stores[index];
-                final isSelected = selectedStore?.id == store.id;
-
-                return GestureDetector(
-                  onTap: () {
-                    if (store != selectedStore && !_isLoading) {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _isBulkDeleteMode = false;
-                        _selectedProductIds.clear();
-                        selectedStore = store;
-                      });
-                      _pagingController.refresh();
-                    }
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(right: 24),
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: isSelected
-                              ? ThemeColor.get(context).primaryAccent
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      store.name ?? '',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected
-                            ? ThemeColor.get(context).primaryAccent
-                            : Colors.black87,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget buildHeader() {
@@ -488,14 +328,12 @@ class _ListProductPageState extends NyState<ListProductPage> {
 
   Widget buildItem(dynamic item, BuildContext context) {
     return InkWell(
-      onLongPress: canEdit()
-          ? () {
-              setState(() {
-                _isBulkDeleteMode = true;
-                _selectedProductIds.add(item.id);
-              });
-            }
-          : null,
+      onLongPress: () {
+        setState(() {
+          _isBulkDeleteMode = true;
+          _selectedProductIds.add(item.id);
+        });
+      },
       child: Stack(children: [
         Column(
           children: [
@@ -503,8 +341,6 @@ class _ListProductPageState extends NyState<ListProductPage> {
               onTap: () {
                 routeTo(DetailProductPage.path, data: {
                   'id': item.id,
-                  'store_id': selectedStore?.id,
-                  'can_edit': canEdit()
                 }, onPop: (value) {
                   _pagingController.refresh();
                 });
@@ -622,11 +458,7 @@ class _ListProductPageState extends NyState<ListProductPage> {
                                         Text(
                                           item.variants.isEmpty
                                               ? '0 đ'
-                                              : (hasAnyPermission([
-                                                  "view_retail_cost_product"
-                                                ])
-                                                  ? '${vnd.format(item.variants?[0].retailCost)} đ'
-                                                  : '${hiddenPrice(item.variants?[0].retailCost)} đ'),
+                                              : '${vnd.format(item.variants?[0].retailCost)} đ',
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 13,
@@ -644,11 +476,7 @@ class _ListProductPageState extends NyState<ListProductPage> {
                                         Text(
                                           item.variants.isEmpty
                                               ? '0 đ'
-                                              : (hasAnyPermission([
-                                                  "view_wholesale_cost_product"
-                                                ])
-                                                  ? '${vnd.format(item.variants?[0].wholesaleCost)} đ'
-                                                  : '${hiddenPrice(item.variants?[0].wholesaleCost)} đ'),
+                                              : '${vnd.format(item.variants?[0].wholesaleCost)} đ',
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 13,
@@ -672,188 +500,139 @@ class _ListProductPageState extends NyState<ListProductPage> {
             ),
           ],
         ),
-        if (canEdit())
-          Positioned(
-            top: 0,
-            right: 0,
-            child: PopupMenuButton<String>(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              onSelected: (String value) {
-                if (value == 'delete') {
-                  _deleteProduct(item.id);
-                }
-                if (value == 'not_show') {
-                  _show(item.id, false);
-                }
-                if (value == 'show') {
-                  _show(item.id, true);
-                }
-                if (value == 'edit') {
-                  if (Auth.user<User>()?.careerType != CareerType.other) {
-                    if (item?.type == 1) {
-                      routeTo(EditProductPage.path, data: {
-                        'is_clone': false,
-                        'id': item.id,
-                        'store_id': selectedStore?.id,
-                      }, onPop: (value) {
-                        _pagingController.refresh();
-                      });
-                    } else {
-                      routeTo(EditProductServicePage.path, data: item.id,
-                          onPop: (value) {
-                        _pagingController.refresh();
-                      });
-                    }
-                  } else {
-                    routeTo(EditProductPage.path, data: {
-                      'is_clone': false,
-                      'id': item.id,
-                      'store_id': selectedStore?.id,
-                    }, onPop: (value) {
-                      _pagingController.refresh();
-                    });
-                  }
-                }
-                if (value == 'clone') {
-                  if (Auth.user<User>()?.careerType != CareerType.other) {
-                    if (item?.type == 1) {
-                      routeTo(EditProductPage.path, data: {
-                        'is_clone': true,
-                        'id': item.id,
-                      }, onPop: (value) {
-                        _pagingController.refresh();
-                      });
-                    } else {
-                      routeTo(EditProductServicePage.path, data: {
-                        'is_clone': true,
-                        'id': item.id,
-                      }, onPop: (value) {
-                        _pagingController.refresh();
-                      });
-                    }
-                  } else {
-                    routeTo(EditProductPage.path, data: {
-                      'is_clone': true,
-                      'id': item.id,
-                    }, onPop: (value) {
-                      _pagingController.refresh();
-                    });
-                  }
-                }
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                if (canEdit())
-                  PopupMenuItem<String>(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          color: Colors.blue[600],
-                          size: 20,
-                        ),
-                        SizedBox(width: 16),
-                        Text(
-                          'Sửa',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (isSameStore())
-                  (item.show == true)
-                      ? PopupMenuItem<String>(
-                          value: 'not_show',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.visibility_off_outlined,
-                                color: Colors.orange[600],
-                                size: 20,
-                              ),
-                              SizedBox(width: 16),
-                              Text(
-                                'Dừng bán',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : PopupMenuItem<String>(
-                          value: 'show',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.visibility_outlined,
-                                color: Colors.green[600],
-                                size: 20,
-                              ),
-                              SizedBox(width: 16),
-                              Text(
-                                'Mở bán',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                if (isSameStore())
-                  PopupMenuItem<String>(
-                    value: 'clone',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.file_copy_outlined,
-                          color: Colors.purple[600],
-                          size: 20,
-                        ),
-                        SizedBox(width: 16),
-                        Text(
-                          'Sao chép',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (isSameStore()) PopupMenuDivider(),
-                if (isSameStore())
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete_outline,
-                          color: Colors.red[600],
-                          size: 20,
-                        ),
-                        SizedBox(width: 16),
-                        Text(
-                          'Xóa',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                            color: Colors.red[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+        Positioned(
+          top: 0,
+          right: 0,
+          child: PopupMenuButton<String>(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
             ),
-          )
+            onSelected: (String value) {
+              if (value == 'delete') {
+                _deleteProduct(item.id);
+              }
+              if (value == 'not_show') {
+                _show(item.id, false);
+              }
+              if (value == 'show') {
+                _show(item.id, true);
+              }
+              if (value == 'edit') {
+                routeTo(EditProductPage.path, data: {
+                  'is_clone': false,
+                  'id': item.id,
+                }, onPop: (value) {
+                  _pagingController.refresh();
+                });
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.edit_outlined,
+                      color: Colors.blue[600],
+                      size: 20,
+                    ),
+                    SizedBox(width: 16),
+                    Text(
+                      'Sửa',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              (item.show == true)
+                  ? PopupMenuItem<String>(
+                      value: 'not_show',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.visibility_off_outlined,
+                            color: Colors.orange[600],
+                            size: 20,
+                          ),
+                          SizedBox(width: 16),
+                          Text(
+                            'Dừng bán',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : PopupMenuItem<String>(
+                      value: 'show',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.visibility_outlined,
+                            color: Colors.green[600],
+                            size: 20,
+                          ),
+                          SizedBox(width: 16),
+                          Text(
+                            'Mở bán',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+              PopupMenuItem<String>(
+                value: 'clone',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.file_copy_outlined,
+                      color: Colors.purple[600],
+                      size: 20,
+                    ),
+                    SizedBox(width: 16),
+                    Text(
+                      'Sao chép',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuDivider(),
+              PopupMenuItem<String>(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete_outline,
+                      color: Colors.red[600],
+                      size: 20,
+                    ),
+                    SizedBox(width: 16),
+                    Text(
+                      'Xóa',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        color: Colors.red[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )
       ]),
     );
   }

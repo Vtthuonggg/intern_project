@@ -1,33 +1,21 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter_app/app/models/storage_item.dart';
 import 'package:flutter_app/app/models/user.dart';
-import 'package:flutter_app/app/networking/customer_invoice_api_service.dart';
 import 'package:flutter_app/app/networking/order_api_service.dart';
 import 'package:flutter_app/app/utils/formatters.dart';
 import 'package:flutter_app/app/utils/message.dart';
-import 'package:flutter_app/app/utils/permission.dart';
-import 'package:flutter_app/app/utils/socket_manager.dart';
-import 'package:flutter_app/app/utils/text.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
 import 'package:flutter_app/resources/dashed_divider.dart';
-import 'package:flutter_app/resources/pages/customer_invoice_page.dart';
-import 'package:flutter_app/resources/pages/order/edit_order_page.dart';
-import 'package:flutter_app/resources/pages/order/return_order_page.dart';
-import 'package:flutter_app/resources/pages/order_invoice_page.dart';
+import 'package:flutter_app/resources/pages/order_list_all_page.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:intl/intl.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 import 'package:flutter_app/resources/pages/custom_toast.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '/app/controllers/controller.dart';
-import '../add_storage_page.dart';
-import 'list_order_page.dart';
 
 class DetailOrderPage extends NyStatefulWidget {
   final Controller controller = Controller();
@@ -44,7 +32,6 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
   int selectedOrderStatus = 1;
   int tempSelectStatus = 1;
 
-  SocketManager _socketManager = SocketManager();
   late Future _future;
   late dynamic orderData = {};
   int invoiceId = 0;
@@ -93,43 +80,15 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
       await api<OrderApiService>((request) =>
           request.updateStatusOrder(widget.data()?['id'], selectedOrderStatus));
       CustomToast.showToastSuccess(context,
-          description:
-              'Cập nhật trạng thái ${text('_sale_order_detail_title', 'đơn hàng')} thành công');
-      if (selectedOrderStatus == 4) {
-        _socketManager.sendEvent('user', {'user_id': Auth.user<User>()!.id});
-      }
+          description: 'Cập nhật trạng thái đơn hàng thành công');
+
       setState(() {
         _future = fetchDetail();
       });
     } catch (e) {
       CustomToast.showToastError(context,
-          description:
-              'Cập nhật trạng thái ${text('_sale_order_detail_title', 'đơn hàng')} thất bại');
+          description: 'Cập nhật trạng thái đơn hàng thất bại');
     }
-  }
-
-  Future _sendInvoice() async {
-    routeTo(OrderInvoicePage.path,
-        data: {
-          'id': widget.data()?['id'],
-          'order_type': widget.data()['type'],
-          'invoice_id': invoiceId,
-          'customer_id': widget.data()['customer_id'],
-          'invoice': orderData['invoice'],
-          'status_order': orderData['status_order'],
-          'name': orderData['name'],
-          'phone': orderData['phone'],
-          'address': orderData['address'],
-          'count_item': orderData['order_detail'].length,
-          'payment_type': orderData['order_payment'][0]['type'],
-          'order_service_fee': orderData['order_service_fee'],
-          'promotion_discount': orderData['promotion']?['discount'] ?? 0,
-        },
-        onPop: (data) => {
-              setState(() {
-                _future = fetchDetail();
-              })
-            });
   }
 
   void _showShippingCode(BuildContext context, dynamic order) {
@@ -274,8 +233,6 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
                       CustomToast.showToastError(context, description: message);
                     },
                     onSuccessful: (message) {
-                      _socketManager.sendEvent(
-                          'user', {'user_id': Auth.user<User>()!.id});
                       CustomToast.showToastSuccess(context,
                           description: 'Thanh toán thành công');
                       Navigator.pop(context);
@@ -380,7 +337,7 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
           children: [
             if (orderData['status_order'] != 6)
               Text(
-                text('sale_order_detail_title', 'Đơn hàng'),
+                'Đơn hàng',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
@@ -436,8 +393,7 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
                                               fontWeight: FontWeight.bold),
                                           children: [
                                             TextSpan(
-                                              text:
-                                                  '${text('_sale_order_detail_title', 'đơn hàng')}:',
+                                              text: 'đơn hàng:',
                                               style: TextStyle(
                                                   fontSize: 16.0,
                                                   fontWeight: FontWeight.bold),
@@ -618,7 +574,6 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
                               ),
                             if (orderData['order_service_fee'].isNotEmpty)
                               buildOtherFee(),
-                            buildEInvoice(),
                             if (orderData['order_detail'].isNotEmpty)
                               buildDetail(),
                           ],
@@ -630,79 +585,6 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
               }),
         ),
       ),
-    );
-  }
-
-  Widget buildEInvoice() {
-    final accent = ThemeColor.get(context).primaryAccent;
-    final partner = orderData?['invoice']?['partner'];
-    // final partner = "vnpt";
-    final link = getEInvoiceLink(partner, orderData['id']);
-
-    final haveInvoice = link != null && link.toString().isNotEmpty;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Divider(height: 30.0),
-        Text(
-          'Hóa đơn điện tử:',
-          style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 8.0),
-        Row(
-          children: [
-            Icon(Icons.receipt, size: 20, color: Colors.teal),
-            SizedBox(width: 8),
-            Expanded(
-              flex: 2,
-              child: Text('Hóa đơn điện tử', style: TextStyle(fontSize: 16)),
-            ),
-            Expanded(
-              flex: 3,
-              child: (!haveInvoice)
-                  ? Text(
-                      "[Không có]",
-                      style: TextStyle(color: Colors.grey),
-                    )
-                  : GestureDetector(
-                      onTap: () async {
-                        if (partner == 'vnpt') {
-                          final uri = Uri.parse(link);
-                          await launchUrl(uri,
-                              mode: LaunchMode.externalApplication);
-                        } else {
-                          routeTo(CustomerInvoicePage.path, data: {
-                            'partner': partner,
-                            'order_id': orderData['id'],
-                            'payload': orderData['invoice'],
-                          });
-                        }
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.open_in_new,
-                            color: accent,
-                          ),
-                          SizedBox(
-                            width: 8,
-                          ),
-                          Text(
-                            'Xem hóa đơn',
-                            style: TextStyle(
-                              color: accent,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -1184,7 +1066,7 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Chi tiết ${text('_product_title', 'sản phẩm')}:',
+              'Chi tiết sản phẩm:',
               style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
             ),
             Column(
@@ -1546,7 +1428,7 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
         if (isCannotEdit() &&
             (orderData['order_refund'] != null &&
                 orderData['order_refund'].isEmpty) &&
-            (Auth.user()?.type == 2 || hasManagerRole()) &&
+            (Auth.user()?.type == 2) &&
             isSameStore)
           Row(
             children: [
@@ -1580,8 +1462,7 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Xác nhận'),
-          content: Text(
-              'Bạn có chắc chắn muốn huỷ ${text('_sale_order_detail_title', 'đơn hàng')} này'),
+          content: Text('Bạn có chắc chắn muốn huỷ đơn hàng này'),
           actions: [
             TextButton(
               style: TextButton.styleFrom(
@@ -1640,7 +1521,7 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
                         height: 10,
                       ),
                       Text(
-                        'Bạn có muốn hủy đơn hàng và hoàn lại ${text('_product_title', 'hàng hóa')} vào kho sau khi hủy không?',
+                        'Bạn có muốn hủy đơn hàng và hoàn lại hàng hóa vào kho sau khi hủy không?',
                         style: TextStyle(
                           fontSize: 16,
                         ),
@@ -1675,8 +1556,6 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
                                           orderData['id'],
                                           isReturn: false),
                                     );
-                                    _socketManager.sendEvent('user',
-                                        {'user_id': Auth.user<User>()!.id});
 
                                     Navigator.of(context).pop();
                                     CustomToast.showToastSuccess(context,
@@ -1730,8 +1609,7 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
                                           orderData['id'],
                                           isReturn: true),
                                     );
-                                    _socketManager.sendEvent('user',
-                                        {'user_id': Auth.user<User>()!.id});
+
                                     Navigator.of(context).pop();
                                     CustomToast.showToastSuccess(context,
                                         description: 'Hủy đơn hàng thành công');
@@ -2016,38 +1894,8 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
     if (!isSameStore || loading) return null;
 
     List<PopupMenuEntry<String>> items = [];
-    items.add(
-      PopupMenuItem<String>(
-        value: 'print',
-        child: ListTile(
-          leading: Icon(Icons.print, color: Colors.deepPurple),
-          title: Text('In hóa đơn'),
-        ),
-      ),
-    );
 
-    if (canReturnOrder() && orderData['type'] != 3) {
-      items.add(
-        PopupMenuItem<String>(
-          value: 'return',
-          child: ListTile(
-            leading: Icon(Icons.refresh, color: Colors.orange),
-            title: Text('Trả hàng'),
-          ),
-        ),
-      );
-      if (Auth.user<User>()?.careerType == CareerType.other) {
-        items.add(
-          PopupMenuItem<String>(
-            value: 'clone',
-            child: ListTile(
-              leading: Icon(Icons.copy, color: Colors.blue),
-              title: Text('Sao chép đơn'),
-            ),
-          ),
-        );
-      }
-    } else if (Auth.user<User>()?.careerType == CareerType.other &&
+    if (Auth.user<User>()?.careerType == CareerType.other &&
         ![4, 5, 6, 7].contains(orderData['status_order'])) {
       items.addAll([
         PopupMenuItem<String>(
@@ -2092,14 +1940,6 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
       color: Colors.white,
       icon: Icon(Icons.more_vert),
       onSelected: (String value) {
-        if (value == 'return') {
-          routeTo(ReturnOrderPage.path, data: {
-            "order": orderData,
-            "priceField": "user_cost",
-          }, onPop: (data) {
-            if (data != null) setState(() {});
-          });
-        }
         if (value == 'clone') {
           orderData['is_clone'] = true;
           routeTo(EditOrderPage.path, data: orderData, onPop: (data) {
@@ -2113,9 +1953,6 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
           routeTo(EditOrderPage.path, data: orderData, onPop: (data) {
             _future = fetchDetail();
           });
-        }
-        if (value == 'print') {
-          _sendInvoice();
         }
       },
       itemBuilder: (BuildContext context) => items,

@@ -2,25 +2,21 @@ import 'dart:developer';
 
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/app/models/storage_item.dart';
 import 'package:flutter_app/app/models/user.dart';
 import 'package:flutter_app/app/networking/order_api_service.dart';
 import 'package:flutter_app/app/utils/formatters.dart';
 import 'package:flutter_app/app/utils/message.dart';
-import 'package:flutter_app/app/utils/permission.dart';
-import 'package:flutter_app/app/utils/socket_manager.dart';
-import 'package:flutter_app/app/utils/text.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
 import 'package:flutter_app/resources/dashed_divider.dart';
-import 'package:flutter_app/resources/pages/add_storage_page.dart';
 import 'package:flutter_app/resources/pages/custom_toast.dart';
-import 'package:flutter_app/resources/pages/order_invoice_page.dart';
+import 'package:flutter_app/resources/pages/order/detail_order_page.dart';
+import 'package:flutter_app/resources/pages/order_list_all_page.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:intl/intl.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 import '/app/controllers/controller.dart';
-import 'order/list_order_page.dart';
-import 'order/return_order_page.dart';
 
 class DetailAddStorageOrderPage extends NyStatefulWidget {
   final Controller controller = Controller();
@@ -53,8 +49,6 @@ class _DetailAddStorageOrderPageState
   bool _isLoading = false;
   late Future _future;
   late dynamic orderData = {};
-  SocketManager _socketManager = SocketManager();
-  bool get isSameStore => widget.data()?['is_same_store'] ?? true;
 
   @override
   init() async {
@@ -75,21 +69,17 @@ class _DetailAddStorageOrderPageState
 
   Future _updateStatus() async {
     try {
-      final response = await api<OrderApiService>((request) =>
+      await api<OrderApiService>((request) =>
           request.updateStatusOrder(widget.data()?['id'], selectedOrderStatus));
       CustomToast.showToastSuccess(context,
-          description:
-              'Cập nhật trạng thái ${text('_sale_order_detail_title', 'đơn hàng')} thành công');
-      if (selectedOrderStatus == 4) {
-        _socketManager.sendEvent('user', {'user_id': Auth.user<User>()!.id});
-      }
+          description: 'Cập nhật trạng thái đơn hàng thành công');
+
       setState(() {
         _future = fetchDetail();
       });
     } catch (e) {
       CustomToast.showToastError(context,
-          description:
-              'Cập nhật trạng thái ${text('_sale_order_detail_title', 'đơn hàng')} thất bại');
+          description: 'Cập nhật trạng thái đơn hàng thất bại');
     }
   }
 
@@ -104,16 +94,16 @@ class _DetailAddStorageOrderPageState
     return res;
   }
 
-  Future _shareOrder() async {
-    routeTo(OrderInvoicePage.path, data: {
-      'id': widget.data()?['id'],
-      'order_type': widget.data()['type'],
-      'invoice_id': invoiceId,
-      'count_item': orderData['order_detail'].length,
-      'payment_type': orderData['order_payment'][0]['type'],
-      'order_service_fee': orderData['order_service_fee'],
-    });
-  }
+  // Future _shareOrder() async {
+  //   routeTo(OrderInvoicePage.path, data: {
+  //     'id': widget.data()?['id'],
+  //     'order_type': widget.data()['type'],
+  //     'invoice_id': invoiceId,
+  //     'count_item': orderData['order_detail'].length,
+  //     'payment_type': orderData['order_payment'][0]['type'],
+  //     'order_service_fee': orderData['order_service_fee'],
+  //   });
+  // }
 
   Future<void> getSelectedInvoiceId() async {
     try {
@@ -145,8 +135,6 @@ class _DetailAddStorageOrderPageState
                       CustomToast.showToastError(context, description: message);
                     },
                     onSuccessful: (message) {
-                      _socketManager.sendEvent(
-                          'user', {'user_id': Auth.user<User>()!.id});
                       CustomToast.showToastSuccess(context,
                           description: 'Thanh toán thành công');
                       Navigator.pop(context);
@@ -218,7 +206,7 @@ class _DetailAddStorageOrderPageState
           children: [
             if (orderData['status_order'] != 6)
               Text(
-                text("purchase_order_detail_title_room", 'Phiếu nhập hàng'),
+                'Phiếu nhập hàng',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   // fontSize: 16.0,
@@ -277,8 +265,7 @@ class _DetailAddStorageOrderPageState
                                               fontWeight: FontWeight.bold),
                                           children: [
                                             TextSpan(
-                                              text:
-                                                  '${text('_sale_order_detail_title', 'đơn hàng')}:',
+                                              text: 'đơn hàng:',
                                               style: TextStyle(
                                                   fontSize: 16.0,
                                                   fontWeight: FontWeight.bold),
@@ -298,7 +285,7 @@ class _DetailAddStorageOrderPageState
                                         overflow: TextOverflow.ellipsis,
                                         maxLines: 1,
                                       ),
-                                      if (isSuccessful() && isSameStore)
+                                      if (isSuccessful())
                                         InkWell(
                                           onTap: () {
                                             showEditOrderCode(orderData);
@@ -330,23 +317,20 @@ class _DetailAddStorageOrderPageState
                                         ),
                                         SizedBox(width: 5),
                                         InkWell(
-                                          onTap: isSameStore
-                                              ? () async {
-                                                  final sourceOrder = await api<
-                                                          OrderApiService>(
-                                                      (request) =>
-                                                          request.detailOrder(
-                                                              orderData['order']
-                                                                  ['id'],
-                                                              storeId: widget
-                                                                      .data()?[
-                                                                  'store_id']));
-                                                  routeTo(
-                                                      DetailAddStorageOrderPage
-                                                          .path,
-                                                      data: sourceOrder);
-                                                }
-                                              : null,
+                                          onTap: () async {
+                                            final sourceOrder =
+                                                await api<OrderApiService>(
+                                                    (request) =>
+                                                        request.detailOrder(
+                                                            orderData['order']
+                                                                ['id'],
+                                                            storeId: widget
+                                                                    .data()?[
+                                                                'store_id']));
+                                            routeTo(
+                                                DetailAddStorageOrderPage.path,
+                                                data: sourceOrder);
+                                          },
                                           child: Text(
                                             orderData['order']?['code'] != null
                                                 ? orderData['order']['code']
@@ -399,8 +383,7 @@ class _DetailAddStorageOrderPageState
                             if (isSuccessful() &&
                                 (orderData['order_refund'] != null &&
                                     orderData['order_refund'].isEmpty) &&
-                                (Auth.user()?.type == 2 || hasManagerRole()) &&
-                                isSameStore)
+                                Auth.user()?.type == 2)
                               Row(
                                 children: [
                                   Expanded(
@@ -452,7 +435,7 @@ class _DetailAddStorageOrderPageState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Chi tiết ${text('_product_title', 'sản phẩm')}:',
+              'Chi tiết sản phẩm:',
               style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
             ),
             Column(
@@ -484,9 +467,7 @@ class _DetailAddStorageOrderPageState
                     children: [
                       TextSpan(text: 'Tổng tiền: '),
                       TextSpan(
-                        text: hasPermission('view_base_cost_product')
-                            ? vndCurrency.format(orderData['base_cost'])
-                            : hiddenPrice(orderData['base_cost']),
+                        text: vndCurrency.format(orderData['base_cost']),
                         style: TextStyle(color: accent),
                       ),
                     ],
@@ -624,12 +605,10 @@ class _DetailAddStorageOrderPageState
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     color: accent)),
-                            Text(
-                                'Đơn giá: ${hasPermission('view_base_cost_product') ? vndCurrency.format(user_cost) : hiddenPrice(user_cost)}',
+                            Text('Đơn giá: ${vndCurrency.format(user_cost)}',
                                 style: TextStyle(
                                     fontSize: 13, fontWeight: FontWeight.bold)),
-                            Text(
-                                'Thành tiền: ${hasPermission('view_base_cost_product') ? vndCurrency.format(base_cost) : hiddenPrice(base_cost)}',
+                            Text('Thành tiền: ${vndCurrency.format(base_cost)}',
                                 style: TextStyle(
                                     fontSize: 13, fontWeight: FontWeight.bold)),
                           ],
@@ -927,7 +906,7 @@ class _DetailAddStorageOrderPageState
                           height: 10,
                         ),
                         Text(
-                          'Bạn có muốn hủy đơn và trả lại ${text('_product_title', 'hàng hóa')} cho nhà cung cấp không?',
+                          'Bạn có muốn hủy đơn và trả lại hàng hóa cho nhà cung cấp không?',
                           style: TextStyle(
                             fontSize: 16,
                           ),
@@ -962,8 +941,6 @@ class _DetailAddStorageOrderPageState
                                             orderData['id'],
                                             isReturn: false),
                                       );
-                                      _socketManager.sendEvent('user',
-                                          {'user_id': Auth.user<User>()!.id});
 
                                       Navigator.of(context).pop();
                                       CustomToast.showToastSuccess(context,
@@ -1017,8 +994,7 @@ class _DetailAddStorageOrderPageState
                                             isReturn: true),
                                       );
                                       Navigator.of(context).pop();
-                                      _socketManager.sendEvent('user',
-                                          {'user_id': Auth.user<User>()!.id});
+
                                       CustomToast.showToastSuccess(context,
                                           description:
                                               'Hủy đơn hàng thành công');
@@ -1065,8 +1041,7 @@ class _DetailAddStorageOrderPageState
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Xác nhận'),
-          content: Text(
-              'Bạn có chắc chắn muốn huỷ ${text('_sale_order_detail_title', 'đơn hàng')} này'),
+          content: Text('Bạn có chắc chắn muốn huỷ đơn hàng này'),
           actions: [
             TextButton(
               style: TextButton.styleFrom(
@@ -1125,7 +1100,7 @@ class _DetailAddStorageOrderPageState
                   Expanded(
                     child: FormBuilderDropdown<int>(
                       name: 'order_status',
-                      enabled: canEdit() && isSameStore,
+                      enabled: canEdit(),
                       initialValue: selectedOrderStatus,
                       decoration: InputDecoration(
                         contentPadding: EdgeInsets.zero,
@@ -1161,9 +1136,7 @@ class _DetailAddStorageOrderPageState
                       },
                     ),
                   ),
-                  if ((selectedOrderStatus != tempSelectStatus) &&
-                      canEdit() &&
-                      isSameStore)
+                  if ((selectedOrderStatus != tempSelectStatus) && canEdit())
                     InkWell(
                       onTap: () async {
                         setState(() {});
@@ -1205,7 +1178,7 @@ class _DetailAddStorageOrderPageState
                       ),
                     ),
                   ),
-                  if (needPay(orderData) && isSameStore) ...[
+                  if (needPay(orderData)) ...[
                     SizedBox(width: 8),
                     InkWell(
                       child: Icon(Icons.edit, color: accent, size: 18),
@@ -1251,9 +1224,7 @@ class _DetailAddStorageOrderPageState
                   Expanded(
                     flex: 3,
                     child: Text(
-                      hasPermission('view_base_cost_product')
-                          ? vndCurrency.format(orderData['base_cost'])
-                          : hiddenPrice(orderData['base_cost']),
+                      vndCurrency.format(orderData['base_cost']),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -1276,9 +1247,7 @@ class _DetailAddStorageOrderPageState
                   Expanded(
                     flex: 3,
                     child: Text(
-                      hasPermission('view_base_cost_product')
-                          ? vndCurrency.format(getPaid(orderData))
-                          : hiddenPrice(getPaid(orderData)),
+                      vndCurrency.format(getPaid(orderData)),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -1372,9 +1341,7 @@ class _DetailAddStorageOrderPageState
                   text: '${getPaymentTypeLabel(payment['type'])}: ',
                   children: <TextSpan>[
                     TextSpan(
-                      text: hasPermission('view_base_cost_product')
-                          ? '${vndCurrency.format(payment['price'])}'
-                          : hiddenPrice(payment['price']),
+                      text: '${vndCurrency.format(payment['price'])}',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -1520,41 +1487,9 @@ class _DetailAddStorageOrderPageState
   }
 
   Widget? buildOrderMenu() {
-    if (!isSameStore) return null;
-
     List<PopupMenuEntry<String>> items = [];
 
-    // Thêm option In hóa đơn
-    items.add(
-      PopupMenuItem<String>(
-        value: 'print',
-        child: ListTile(
-          leading: Icon(Icons.print, color: Colors.deepPurple),
-          title: Text('In hóa đơn'),
-        ),
-      ),
-    );
-
-    if (canReturnOrder()) {
-      items.add(
-        PopupMenuItem<String>(
-          value: 'return',
-          child: ListTile(
-            leading: Icon(Icons.refresh, color: Colors.orange),
-            title: Text('Trả hàng'),
-          ),
-        ),
-      );
-      items.add(
-        PopupMenuItem<String>(
-          value: 'clone',
-          child: ListTile(
-            leading: Icon(Icons.copy, color: Colors.blue),
-            title: Text('Sao chép đơn'),
-          ),
-        ),
-      );
-    } else if (![4, 5, 6, 7].contains(orderData['status_order'])) {
+    if (![4, 5, 6, 7].contains(orderData['status_order'])) {
       items.addAll([
         PopupMenuItem<String>(
           value: 'edit',
@@ -1598,17 +1533,6 @@ class _DetailAddStorageOrderPageState
       color: Colors.white,
       icon: Icon(Icons.more_vert),
       onSelected: (String value) {
-        if (value == 'print') {
-          _shareOrder();
-        }
-        if (value == 'return') {
-          routeTo(ReturnOrderPage.path, data: {
-            "order": widget.data()['order'] ?? widget.data(),
-            "priceField": "base_cost_base",
-          }, onPop: (data) {
-            if (data != null) setState(() {});
-          });
-        }
         if (value == 'clone') {
           orderData['is_clone'] = true;
           routeTo(AddStoragePage.path, data: orderData, onPop: (data) {
