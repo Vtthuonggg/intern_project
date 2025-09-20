@@ -1,11 +1,9 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter_app/resources/pages/pos/reservation_pos_page.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_app/app/models/user.dart';
@@ -17,7 +15,7 @@ import 'package:flutter_app/bootstrap/helpers.dart';
 import 'package:flutter_app/resources/pages/custom_toast.dart';
 import 'package:flutter_app/resources/pages/manage_table/beverage_reservation_page.dart';
 import 'package:flutter_app/resources/pages/manage_table/select_variant_table_page.dart';
-import 'package:flutter_app/resources/pages/manage_table/table_reservation_page.dart';
+
 import 'package:flutter_app/resources/widgets/manage_table/table_detail.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:nylo_framework/nylo_framework.dart';
@@ -87,8 +85,7 @@ extension TableStatusExtension on TableStatus {
               children: [
                 Icon(Icons.event_seat, size: 18, color: Colors.orange),
                 SizedBox(width: 8),
-                Text("Đặt ${text('_table_title', "bàn")}",
-                    style: TextStyle(fontSize: 14)),
+                Text("Đặtv bàn", style: TextStyle(fontSize: 14)),
               ],
             ),
             value: "reserve",
@@ -102,16 +99,6 @@ extension TableStatusExtension on TableStatus {
               ],
             ),
             value: "edit",
-          ),
-          PopupMenuItem(
-            child: Row(
-              children: [
-                Icon(Icons.calendar_today, size: 18, color: Colors.teal),
-                SizedBox(width: 8),
-                Text("Xem lịch", style: TextStyle(fontSize: 14)),
-              ],
-            ),
-            value: "view_calendar",
           ),
           PopupMenuDivider(),
           PopupMenuItem(
@@ -142,33 +129,10 @@ extension TableStatusExtension on TableStatus {
               children: [
                 Icon(Icons.swap_horiz, size: 18, color: Colors.blue),
                 SizedBox(width: 8),
-                Text("Chuyển ${text('_table_title', "bàn")}",
-                    style: TextStyle(fontSize: 14)),
+                Text("Chuyển bàn", style: TextStyle(fontSize: 14)),
               ],
             ),
             value: "move",
-          ),
-          if (Auth.user<User>()?.reservePath == BeverageReservationPage.path)
-            PopupMenuItem(
-              child: Row(
-                children: [
-                  Icon(Icons.qr_code, size: 18, color: Colors.purple),
-                  SizedBox(width: 8),
-                  Text("Mã QR", style: TextStyle(fontSize: 14)),
-                ],
-              ),
-              value: "qr_code",
-            ),
-          PopupMenuItem(
-            child: Row(
-              children: [
-                Icon(Icons.calendar_today, size: 18, color: Colors.teal),
-                SizedBox(width: 8),
-                Text(text('view_calendar', "Xem lịch"),
-                    style: TextStyle(fontSize: 14)),
-              ],
-            ),
-            value: "view_calendar",
           ),
         ];
       case TableStatus.preOrder:
@@ -188,21 +152,10 @@ extension TableStatusExtension on TableStatus {
               children: [
                 Icon(Icons.swap_horiz, size: 18, color: Colors.blue),
                 SizedBox(width: 8),
-                Text("Chuyển ${text('_table_title', "bàn")}",
-                    style: TextStyle(fontSize: 14)),
+                Text("Chuyển bàn", style: TextStyle(fontSize: 14)),
               ],
             ),
             value: "move",
-          ),
-          PopupMenuItem(
-            child: Row(
-              children: [
-                Icon(Icons.qr_code, size: 18, color: Colors.purple),
-                SizedBox(width: 8),
-                Text("Mã QR", style: TextStyle(fontSize: 14)),
-              ],
-            ),
-            value: "qr_code",
           ),
           PopupMenuItem(
             child: Row(
@@ -213,17 +166,6 @@ extension TableStatusExtension on TableStatus {
               ],
             ),
             value: "cancel",
-          ),
-          PopupMenuItem(
-            child: Row(
-              children: [
-                Icon(Icons.calendar_today, size: 18, color: Colors.teal),
-                SizedBox(width: 8),
-                Text(text('view_calendar', "Xem lịch"),
-                    style: TextStyle(fontSize: 14)),
-              ],
-            ),
-            value: "view_calendar",
           ),
         ];
       default:
@@ -241,6 +183,7 @@ class TableItem extends StatefulWidget {
   final Function onTapEditTable;
   final Function onTapMoveTable;
   final VoidCallback refresh;
+  final VoidCallback cancelTable;
   final dynamic order;
   final bool isMoveTable;
   final Function onConfirmMove;
@@ -251,6 +194,7 @@ class TableItem extends StatefulWidget {
       this.status = TableStatus.free,
       this.isMoveTable = false,
       this.areaName = "",
+      required this.cancelTable,
       required this.onConfirmMove,
       required this.name,
       required this.id,
@@ -284,7 +228,6 @@ class _TableItemState extends State<TableItem> {
       //         (request) => request.completeTable(widget.order['id']));
       CustomToast.showToastSuccess(context, description: 'Thành công');
       widget.refresh();
-      Navigator.pop(context);
     } catch (e) {
       CustomToast.showToastError(context, description: getResponseError(e));
     } finally {
@@ -348,6 +291,7 @@ class _TableItemState extends State<TableItem> {
     try {
       await api<RoomApiService>(
           (request) => request.cancelTable(widget.order['id']));
+      widget.cancelTable();
       CustomToast.showToastSuccess(context, description: 'Hủy thành công');
       widget.refresh();
       Navigator.pop(context);
@@ -442,7 +386,7 @@ class _TableItemState extends State<TableItem> {
     bool isPosRoomUser = Auth.user<User>()?.isPosRoomUser == true;
 
     if (isPosRoomUser) {
-      double itemSize = MediaQuery.of(context).size.width / 6;
+      double itemSize = MediaQuery.of(context).size.width / 8;
       return Container(
         width: itemSize,
         height: itemSize,
@@ -689,8 +633,7 @@ class _TableItemState extends State<TableItem> {
                       widget.refresh();
                     },
                   );
-                } else if (Auth.user<User>()?.reservePath ==
-                    BeverageReservationPage.path) {
+                } else {
                   routeTo(
                     SelectVariantTablePage.path,
                     data: {
@@ -704,13 +647,6 @@ class _TableItemState extends State<TableItem> {
                       widget.refresh();
                     },
                   );
-                } else {
-                  routeTo(Auth.user<User>()?.reservePath, data: {
-                    "room_id": widget.id,
-                    "current_room_type": TableStatus.free.toValue(),
-                  }, onPop: (value) {
-                    widget.refresh();
-                  });
                 }
               } else {
                 if (widget.status == TableStatus.using) {
@@ -769,7 +705,7 @@ class _TableItemState extends State<TableItem> {
                               Align(
                                 alignment: Alignment.center,
                                 child: Text(
-                                  "${text('home_table', "Bàn")} trống",
+                                  "Bàn trống",
                                   style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 17,
@@ -870,7 +806,7 @@ class _TableItemState extends State<TableItem> {
           if (widget.isMoveTable != true)
             Positioned(
                 top: 0,
-                right: 0,
+                right: isPosRoomUser ? 3 : 0,
                 child: SizedBox(
                   width: 30,
                   height: 30,
@@ -919,7 +855,7 @@ class _TableItemState extends State<TableItem> {
                   widget.refresh();
                 });
               } else {
-                routeTo(Auth.user<User>()?.reservePath, data: {
+                routeTo(BeverageReservationPage.path, data: {
                   "room_id": widget.id,
                   "room_type": "using",
                   "button_type": "reserve",
@@ -942,32 +878,17 @@ class _TableItemState extends State<TableItem> {
                   widget.refresh();
                 });
               } else {
-                if (Auth.user<User>()?.reservePath ==
-                    BeverageReservationPage.path) {
-                  routeTo(SelectVariantTablePage.path, data: {
-                    "room_id": widget.id,
-                    "room_type": "using",
-                    "button_type": "create_order",
-                    "room_name": widget.name,
-                    "area_name": widget.areaName,
-                  }, onPop: (value) {
-                    widget.refresh();
-                  });
-                } else {
-                  routeTo(Auth.user<User>()?.reservePath, data: {
-                    "room_id": widget.id,
-                    "room_type": "using",
-                    "button_type": "create_order",
-                    "room_name": widget.name,
-                    "area_name": widget.areaName,
-                  }, onPop: (value) {
-                    widget.refresh();
-                  });
-                }
+                routeTo(SelectVariantTablePage.path, data: {
+                  "room_id": widget.id,
+                  "room_type": "using",
+                  "button_type": "create_order",
+                  "room_name": widget.name,
+                  "area_name": widget.areaName,
+                }, onPop: (value) {
+                  widget.refresh();
+                });
               }
-              break;
-            case "view_calendar":
-              gotoCalendar();
+
               break;
             case "complete":
               goToUpdateOrder(TableStatus.free, true);
@@ -1270,9 +1191,8 @@ class _TableItemState extends State<TableItem> {
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
-              title: Text("Hủy ${text('_table_title', "bàn")}"),
-              content: Text(
-                  "Bạn có chắc chắn muốn hủy đặt ${text('_table_title', "bàn")} này?"),
+              title: Text("Hủy bàn"),
+              content: Text("Bạn có chắc chắn muốn hủy đặt bàn này?"),
               actions: [
                 TextButton(
                     style: TextButton.styleFrom(
@@ -1308,9 +1228,8 @@ class _TableItemState extends State<TableItem> {
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
-              title: Text("Xoá ${text('_table_title', "bàn")}"),
-              content: Text(
-                  "Bạn có chắc chắn muốn Xoá ${text('_table_title', "bàn")} này?"),
+              title: Text("Xoá bàn"),
+              content: Text("Bạn có chắc chắn muốn Xoá bàn này?"),
               actions: [
                 TextButton(
                     style: TextButton.styleFrom(
@@ -1363,7 +1282,7 @@ class _TableItemState extends State<TableItem> {
         },
       );
     } else {
-      routeTo(Auth.user<User>()?.reservePath, data: {
+      routeTo(BeverageReservationPage.path, data: {
         "note": orderDetail['note'],
         "room_id": widget.id,
         "edit_data": orderDetail,
@@ -1376,11 +1295,6 @@ class _TableItemState extends State<TableItem> {
         widget.refresh();
       });
     }
-  }
-
-  void gotoCalendar() {
-    routeTo(CalendarOrderPage.path,
-        data: {"room_id": widget.id, "name": widget.name});
   }
 
   void showDetailModal() async {
@@ -1400,7 +1314,10 @@ class _TableItemState extends State<TableItem> {
             padding: MediaQuery.of(context).viewInsets,
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: TableDetail(table: widget, refresh: widget.refresh),
+              child: TableDetail(
+                table: widget,
+                refresh: widget.refresh,
+              ),
             ),
           );
         });

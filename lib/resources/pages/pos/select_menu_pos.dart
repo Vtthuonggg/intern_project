@@ -1,25 +1,16 @@
 import 'dart:async';
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_app/app/controllers/controller.dart';
 import 'package:flutter_app/app/models/category.dart';
 import 'package:flutter_app/app/models/storage_item.dart';
-import 'package:flutter_app/app/networking/category_api_service.dart';
 import 'package:flutter_app/app/networking/product_api_service.dart';
 import 'package:flutter_app/app/utils/formatters.dart';
 import 'package:flutter_app/app/utils/getters.dart';
 import 'package:flutter_app/app/utils/message.dart';
-import 'package:flutter_app/app/utils/text.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
-import 'package:flutter_app/resources/pages/manage_table/beverage_reservation_page.dart';
-import 'package:flutter_app/resources/pages/manage_table/table_reservation_page.dart';
-import 'package:flutter_app/resources/pages/product/edit_product_service_page.dart';
 import 'package:flutter_app/resources/widgets/single_tap_detector.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 
@@ -74,7 +65,6 @@ class _SelectMenuPosPageState extends NyState<SelectMenuPos> {
     _pagingController.addPageRequestListener((pageKey) {
       _fetchPage(pageKey);
     });
-    _fetchCate(1);
     super.initState();
   }
 
@@ -102,22 +92,6 @@ class _SelectMenuPosPageState extends NyState<SelectMenuPos> {
       }
     } catch (error) {
       _pagingController.error = error;
-    }
-  }
-
-  Future<void> _fetchCate(int pageKey) async {
-    try {
-      List<CategoryModel> newItems = await api<CategoryApiService>(
-          (request) => request.listCategoryPaginate(pageKey, 100, ''));
-      lstCate = [];
-      var highlightCate = CategoryModel();
-      highlightCate.name = 'Nổi bật';
-      highlightCate.id = null;
-      lstCate.add(highlightCate);
-      lstCate.addAll(newItems);
-      setState(() {});
-    } catch (error) {
-      showToastWarning(description: error.toString());
     }
   }
 
@@ -278,26 +252,6 @@ class _SelectMenuPosPageState extends NyState<SelectMenuPos> {
                     isSearchMode = true;
                   });
                 }),
-          if (!isSearchMode)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: InkWell(
-                  child: Icon(Icons.add),
-                  onTap: () {
-                    routeTo(
-                      EditProductServicePage.path,
-                      onPop: (value) {
-                        value != null ? _pagingController.refresh() : null;
-                      },
-                    );
-                  }),
-            ),
-          if (isSearchMode)
-            Padding(
-              padding: const EdgeInsets.only(right: 20.0),
-              child:
-                  InkWell(child: Icon(FontAwesomeIcons.barcode), onTap: () {}),
-            ),
         ],
       ),
       body: SafeArea(
@@ -342,8 +296,7 @@ class _SelectMenuPosPageState extends NyState<SelectMenuPos> {
                           itemBuilder: (context, item, index) =>
                               buildPopupItem(context, item),
                           noItemsFoundIndicatorBuilder: (_) => Center(
-                              child: Text(
-                                  "Không tìm thấy ${text('_product_title', 'sản phẩm')} nào")),
+                              child: Text("Không tìm thấy sản phẩm nào")),
                         ),
                       ),
                     ),

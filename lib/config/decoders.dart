@@ -2,7 +2,9 @@ import 'package:flutter_app/app/networking/auth_api_service.dart';
 import 'package:flutter_app/app/networking/cash_book_api_service.dart';
 import 'package:flutter_app/app/networking/dio/base_api_service.dart';
 import 'package:flutter_app/app/networking/order_api_service.dart';
+import 'package:flutter_app/app/networking/post_ingredients_api.dart';
 import 'package:flutter_app/app/networking/product_api_service.dart';
+import 'package:flutter_app/app/networking/room_api_service.dart';
 import 'package:flutter_app/app/networking/upload_api_service.dart';
 import 'package:flutter_app/app/networking/user_api_service.dart';
 import '/app/models/user.dart';
@@ -39,6 +41,8 @@ final Map<Type, BaseApiService> apiDecoders = {
   OrderApiService: OrderApiService(),
   CashBookApiService: CashBookApiService(),
   UploadApiService: UploadApiService(),
+  IngredientApi: IngredientApi(),
+  RoomApiService: RoomApiService(),
 };
 
 

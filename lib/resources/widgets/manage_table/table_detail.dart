@@ -5,9 +5,9 @@ import 'package:flutter_app/app/models/user.dart';
 import 'package:flutter_app/app/networking/order_api_service.dart';
 import 'package:flutter_app/app/networking/room_api_service.dart';
 import 'package:flutter_app/app/utils/message.dart';
-import 'package:flutter_app/app/utils/text.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
 import 'package:flutter_app/resources/pages/custom_toast.dart';
+import 'package:flutter_app/resources/pages/manage_table/beverage_reservation_page.dart';
 import 'package:flutter_app/resources/pages/pos/reservation_pos_page.dart';
 import 'package:flutter_app/resources/widgets/manage_table/table_item.dart';
 import 'package:nylo_framework/nylo_framework.dart';
@@ -57,7 +57,7 @@ class _TableDetailState extends State<TableDetail> {
         widget.refresh();
       });
     } else {
-      routeTo(Auth.user<User>()?.reservePath, data: {
+      routeTo(BeverageReservationPage.path, data: {
         "room_id": widget.table.id,
         "edit_data": orderDetail,
         "room_type": TableStatus.using.toValue(),
@@ -118,7 +118,7 @@ class _TableDetailState extends State<TableDetail> {
         widget.refresh();
       });
     } else {
-      routeTo(Auth.user<User>()?.reservePath, data: {
+      routeTo(BeverageReservationPage.path, data: {
         "room_id": widget.table.id,
         "edit_data": orderDetail,
         "room_type": TableStatus.using.toValue(),
@@ -138,8 +138,8 @@ class _TableDetailState extends State<TableDetail> {
   }
 
   get modalTitle => widget.table.status == TableStatus.using
-      ? 'Chi tiết ${text('_table_title', 'bàn')} ${widget.table.name}'
-      : 'Chi tiết đặt ${text('_table_title', 'bàn')} ${widget.table.name}';
+      ? 'Chi tiết bàn ${widget.table.name}'
+      : 'Chi tiết đặt bàn ${widget.table.name}';
 
   @override
   void initState() {

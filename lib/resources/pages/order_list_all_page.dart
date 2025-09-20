@@ -417,15 +417,11 @@ class _OrderListAllPageState extends NyState<OrderListAllPage> with RouteAware {
   }
 
   bool haveOrderList() {
-    return (widget.onTabbar ?? false)
-        ? (Auth.user()?.permissions ?? []).contains('list_order')
-        : widget.data()['is_order'] ?? false;
+    return true;
   }
 
   bool haveStorageList() {
-    return (widget.onTabbar ?? false)
-        ? (Auth.user()?.permissions ?? []).contains('list_ordesbuy')
-        : !(widget.data()['is_order'] ?? false);
+    return true;
   }
 
   dynamic total = {

@@ -15,6 +15,10 @@ import 'package:flutter_app/resources/pages/product/list_product_page.dart';
 import 'package:flutter_app/resources/pages/product/setting_product_page.dart';
 import 'package:flutter_app/resources/pages/setting/setting_page.dart';
 import 'package:flutter_app/resources/pages/splash_page.dart';
+import 'package:flutter_app/resources/pages/manage_table/manage_table_page.dart';
+import 'package:flutter_app/resources/pages/add_storage_page.dart';
+import 'package:flutter_app/resources/pages/manage_table/select_variant_table_page.dart';
+import 'package:flutter_app/resources/pages/manage_table/beverage_reservation_page.dart';
 
 import 'package:nylo_framework/nylo_framework.dart';
 
@@ -126,6 +130,33 @@ appRouter() => nyRoutes((router) {
       router.route(
         SettingPage.path,
         (context) => SettingPage(),
+        transition: PageTransitionType.rightToLeft,
+        pageTransitionSettings: const PageTransitionSettings(),
+      );
+      router.route(
+        ManageTablePage.path,
+        (context) => ManageTablePage(),
+        transition: PageTransitionType.rightToLeft,
+        pageTransitionSettings: const PageTransitionSettings(),
+      );
+
+      router.route(
+        AddStoragePage.path,
+        (context) => AddStoragePage(),
+        transition: PageTransitionType.rightToLeft,
+        pageTransitionSettings: const PageTransitionSettings(),
+      );
+
+      router.route(
+        SelectVariantTablePage.path,
+        (context) => SelectVariantTablePage(),
+        transition: PageTransitionType.rightToLeft,
+        pageTransitionSettings: const PageTransitionSettings(),
+      );
+
+      router.route(
+        BeverageReservationPage.path,
+        (context) => BeverageReservationPage(),
         transition: PageTransitionType.rightToLeft,
         pageTransitionSettings: const PageTransitionSettings(),
       );

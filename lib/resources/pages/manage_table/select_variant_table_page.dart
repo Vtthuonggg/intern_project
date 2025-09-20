@@ -1,22 +1,16 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_app/app/controllers/controller.dart';
 import 'package:flutter_app/app/models/category.dart';
 import 'package:flutter_app/app/models/storage_item.dart';
-import 'package:flutter_app/app/networking/category_api_service.dart';
 import 'package:flutter_app/app/networking/product_api_service.dart';
 import 'package:flutter_app/app/utils/formatters.dart';
 import 'package:flutter_app/app/utils/getters.dart';
 import 'package:flutter_app/app/utils/message.dart';
-import 'package:flutter_app/app/utils/text.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
 import 'package:flutter_app/resources/pages/manage_table/beverage_reservation_page.dart';
-import 'package:flutter_app/resources/pages/manage_table/table_reservation_page.dart';
-import 'package:flutter_app/resources/pages/manage_table/take_away_table_page.dart';
-import 'package:flutter_app/resources/pages/product/edit_product_service_page.dart';
 import 'package:flutter_app/resources/widgets/single_tap_detector.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -88,7 +82,6 @@ class _SelectVariantTablePageState extends NyState<SelectVariantTablePage> {
     _pagingController.addPageRequestListener((pageKey) {
       _fetchPage(pageKey);
     });
-    _fetchCate(1);
     isTakeAway = widget.data()['take_away'] ?? false;
     super.initState();
   }
@@ -126,22 +119,6 @@ class _SelectVariantTablePageState extends NyState<SelectVariantTablePage> {
       }
     } catch (error) {
       _pagingController.error = error;
-    }
-  }
-
-  Future<void> _fetchCate(int pageKey) async {
-    try {
-      List<CategoryModel> newItems = await api<CategoryApiService>(
-          (request) => request.listCategoryPaginate(pageKey, 100, ''));
-      lstCate = [];
-      var highlightCate = CategoryModel();
-      highlightCate.name = 'Nổi bật';
-      highlightCate.id = null;
-      lstCate.add(highlightCate);
-      lstCate.addAll(newItems);
-      setState(() {});
-    } catch (error) {
-      showToastWarning(description: error.toString());
     }
   }
 
@@ -328,20 +305,6 @@ class _SelectVariantTablePageState extends NyState<SelectVariantTablePage> {
                     isSearchMode = true;
                   });
                 }),
-          if (!isSearchMode)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: InkWell(
-                  child: Icon(Icons.add),
-                  onTap: () {
-                    routeTo(
-                      EditProductServicePage.path,
-                      onPop: (value) {
-                        value != null ? _pagingController.refresh() : null;
-                      },
-                    );
-                  }),
-            ),
           if (isSearchMode)
             Padding(
               padding: const EdgeInsets.only(right: 20.0),
@@ -382,9 +345,8 @@ class _SelectVariantTablePageState extends NyState<SelectVariantTablePage> {
                         ),
                         itemBuilder: (context, item, index) =>
                             buildPopupItem(context, item),
-                        noItemsFoundIndicatorBuilder: (_) => Center(
-                            child: Text(
-                                "Không tìm thấy ${text('_product_title', 'sản phẩm')} nào")),
+                        noItemsFoundIndicatorBuilder: (_) =>
+                            Center(child: Text("Không tìm thấy sản phẩm nào")),
                       ),
                     ),
                   ),
@@ -461,38 +423,28 @@ class _SelectVariantTablePageState extends NyState<SelectVariantTablePage> {
                                 if (isEditing) {
                                   Navigator.of(context).pop(selectedItems);
                                 } else {
-                                  if (isTakeAway == true) {
-                                    routeTo(TakeAwayTablePage.path, data: {
-                                      'room_id': 0,
-                                      'button_type': "create_order",
+                                  routeTo(
+                                    BeverageReservationPage.path,
+                                    data: {
+                                      'room_id': roomId,
+                                      'button_type': buttonType,
                                       'items': selectedItems,
-                                      'area_name': 'Bàn',
-                                      'room_name': 'Mang đi',
-                                    });
-                                  } else {
-                                    routeTo(
-                                      BeverageReservationPage.path,
-                                      data: {
-                                        'room_id': roomId,
-                                        'button_type': buttonType,
-                                        'items': selectedItems,
-                                        'area_name': areaName,
-                                        'room_name': roomName,
-                                      },
-                                      onPop: (value) {
-                                        if (value != null) {
-                                          selectedItems =
-                                              value as List<StorageItem>;
-                                          for (var item in selectedItems) {
-                                            item.txtQuantity.text =
-                                                roundQuantity(item.quantity);
-                                          }
+                                      'area_name': areaName,
+                                      'room_name': roomName,
+                                    },
+                                    onPop: (value) {
+                                      if (value != null) {
+                                        selectedItems =
+                                            value as List<StorageItem>;
+                                        for (var item in selectedItems) {
+                                          item.txtQuantity.text =
+                                              roundQuantity(item.quantity);
                                         }
-                                        _pagingController.refresh();
-                                        setState(() {});
-                                      },
-                                    );
-                                  }
+                                      }
+                                      _pagingController.refresh();
+                                      setState(() {});
+                                    },
+                                  );
                                 }
                               },
                               style: TextButton.styleFrom(

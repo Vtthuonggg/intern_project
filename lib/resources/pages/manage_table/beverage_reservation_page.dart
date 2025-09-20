@@ -3,43 +3,26 @@ import 'dart:developer';
 import 'package:collection/collection.dart';
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
 import 'package:draggable_fab/draggable_fab.dart';
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_app/app/models/customer.dart';
-import 'package:flutter_app/app/models/printer.dart';
 import 'package:flutter_app/app/models/product.dart';
 import 'package:flutter_app/app/models/storage_item.dart';
 import 'package:flutter_app/app/models/user.dart';
-import 'package:flutter_app/app/networking/customer_api_service.dart';
-import 'package:flutter_app/app/networking/get_point_api.dart';
 import 'package:flutter_app/app/networking/order_api_service.dart';
 import 'package:flutter_app/app/networking/post_ingredients_api.dart';
-import 'package:flutter_app/app/networking/price_policy_api_service.dart';
 import 'package:flutter_app/app/networking/product_api_service.dart';
 import 'package:flutter_app/app/networking/room_api_service.dart';
-import 'package:flutter_app/app/providers/table_notifier.dart';
-import 'package:flutter_app/app/services/usb_printer_service.dart';
 import 'package:flutter_app/app/utils/formatters.dart';
 import 'package:flutter_app/app/utils/getters.dart';
 import 'package:flutter_app/app/utils/message.dart';
-import 'package:flutter_app/app/utils/printter.dart';
-import 'package:flutter_app/app/utils/socket_manager.dart';
-import 'package:flutter_app/app/utils/text.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
-import 'package:flutter_app/resources/pages/add_storage_page.dart';
-import 'package:flutter_app/resources/pages/customer/customer_search_order.dart';
-import 'package:flutter_app/resources/pages/manage_table/config_fee/list_ingredients.dart';
+import 'package:flutter_app/resources/pages/manage_table/list_ingredients.dart';
 import 'package:flutter_app/resources/pages/manage_table/select_variant_table_page.dart';
-import 'package:flutter_app/resources/pages/order/list_order_page.dart';
-import 'package:flutter_app/resources/pages/order_invoice_page.dart';
 import 'package:flutter_app/resources/pages/setting/setting_order_sale_page.dart';
 import 'package:flutter_app/resources/widgets/breadcrumb.dart';
 import 'package:flutter_app/resources/widgets/manage_table/select_topping.dart';
-import 'package:flutter_app/resources/widgets/product_scan.dart';
-import 'package:flutter_app/resources/widgets/quantity_form_field.dart';
 import 'package:flutter_app/resources/widgets/single_tap_detector.dart';
 import 'package:flutter_app/resources/widgets/manage_table/table_item.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -49,14 +32,10 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:nylo_framework/nylo_framework.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/capability_profile.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/enums.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/generator.dart';
 import 'package:thermal_printer/thermal_printer.dart';
 import '../../widgets/order_storage_item.dart';
 import '/app/controllers/controller.dart';
 import 'package:flutter_app/resources/pages/custom_toast.dart';
-import 'package:image/image.dart' as img;
 
 class BeverageReservationPage extends NyStatefulWidget {
   final Controller controller = Controller();
@@ -74,8 +53,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
   final discountController = TextEditingController();
   final vatController = TextEditingController();
   bool _toastShown = false;
-
-  SocketManager _socketManager = SocketManager();
 
   int? orderId;
   bool _isShowingScan = false;
@@ -109,9 +86,7 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
   int orderIdIngre = 0;
   List<Map<String, dynamic>> selectedDishes = [];
   Map<String, bool> featuresConfig = {};
-  PrinterModel? selectedPrinter1;
-  PrinterModel? selectedPrinter2;
-  PrinterModel? savedPrinter;
+
   BTStatus _currentBluetoothStatus = BTStatus.none;
   List<int>? pendingTask;
   int invoiceId = 0;
@@ -120,19 +95,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
   num getOtherFee = 0;
   bool isReload = true;
   List<dynamic> initProductNotes = [];
-  final selectMultiKeyCustomer = GlobalKey<DropdownSearchState<Customer>>();
-  Customer? selectedCustomer;
-  final GlobalKey<CustomerSearchOrderState> _multiSelectKeyCustomer =
-      GlobalKey<CustomerSearchOrderState>();
-  bool get isConnectedPrinterUsb => usbReady.value;
-  var printerManager = PrinterManager.instance;
-  final loadingNotifier = ValueNotifier<bool>(false);
-  final usbReady = ValueNotifier<bool>(false);
-  final _usbService = UsbPrinterService();
-  bool _usbReady = false;
-  List<int>? _cachedPrintBytes;
-  static const _usbTimeout = Duration(seconds: 5);
-  CapabilityProfile? _profile;
   String imageBase64Decode = '';
   Uint8List imageHtmlContent = Uint8List(0);
   int? currentPolicy;
@@ -141,7 +103,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
   String orderCode = '';
   List<dynamic> otherFeeList = [];
   final SlidableController slidableController = SlidableController();
-  late TableNotifier _tableNotifier;
   List<dynamic> saveChangeProductPrice = [];
   int costPoint = 0;
   int totalPointCost = 0;
@@ -155,14 +116,8 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
     super.init();
     if (!isEditing) {
       initPrinter();
-      _bootstrap();
-      final _savedPrinter = await getFirstPrinterOrAdd(context);
-      final _savedPrinter2 = await getSecondPrinterOrAdd(context);
-      selectedPrinter1 = _savedPrinter;
-      selectedPrinter2 = _savedPrinter2;
     }
-    _tableNotifier = TableNotifier();
-    _tableNotifier.addListener(_onTableNotifierUpdate);
+
     final config = await getOrderSaleConfig();
     setState(() {
       featuresConfig = config;
@@ -181,9 +136,7 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
       });
       updatePaid();
     }
-    getDataPointCost();
 
-    await _fetchListPolicies();
     if (isEditing) {
       WidgetsBinding.instance
           .addPostFrameCallback((_) => _patchEditData(context));
@@ -195,15 +148,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
     }
 
     await _fetchListFee();
-  }
-
-  getDataPointCost() async {
-    try {
-      final response = await api<PointApi>((request) => request.getPoint());
-      costPoint = response['data']['cost'];
-    } catch (e) {
-      print(e);
-    }
   }
 
   getPointCost(int point) {
@@ -278,40 +222,12 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
     }
   }
 
-  Future _fetchListPolicies() async {
-    try {
-      final response = await api<PricePolicyApiService>(
-          (request) => request.getAllPolicy(1, 100, 1));
-      for (var item in response) {
-        if (item['type'] == 1) {
-          listPolicies.add(item);
-        }
-      }
-      setState(() {});
-    } catch (e) {
-      CustomToast.showToastError(context, description: "Có lỗi xảy ra");
-    }
-  }
-
   num getTotalQty(List<StorageItem> items) {
     num total = 0;
     for (var item in items) {
       total += item.quantity ?? 0;
     }
     return total;
-  }
-
-  Future<Customer> getCustomerWithId(int customerId) async {
-    try {
-      final items = await api<CustomerApiService>(
-          (request) => request.getCustomerDetail(customerId));
-
-      return items;
-    } catch (e) {
-      String errorMessage = getResponseError(e);
-      CustomToast.showToastError(context, description: errorMessage);
-      return Customer();
-    }
   }
 
   Future<void> _patchEditData(BuildContext context) async {
@@ -379,10 +295,7 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
           : null,
     });
     selectedCustomerId = editData['customer_id'];
-    if (editData['customer_id'] != null) {
-      var customer = await getCustomerWithId(editData['customer_id']);
-      selectedCustomer = customer;
-    }
+
     orderId = editData['id'];
     var lstOrder = editData['order_detail'] as List<dynamic>;
     for (Map<String, dynamic> item in lstOrder) {
@@ -530,7 +443,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
     getOtherFee = 0;
     selectedCustomerId = null;
     _discountType = DiscountType.percent;
-    selectedCustomer = null;
     // for(var item in selectedItems) {
     //   _formKey.currentState?.fields['${item.id}.quantity']?.reset();
     //   _formKey.currentState?.fields['${item.id}.price']?.reset();
@@ -543,16 +455,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
   @override
   void dispose() {
     super.dispose();
-    _tableNotifier.removeListener(_onTableNotifierUpdate);
-  }
-
-  void _onTableNotifierUpdate() async {
-    if (_tableNotifier.shouldOrderRefresh &&
-        _tableNotifier.targetRoomId == roomId &&
-        mounted) {
-      await _reloadEditData();
-      _tableNotifier.refreshOrderCompleted();
-    }
   }
 
   Future<void> getSelectedInvoiceId() async {
@@ -769,6 +671,20 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
     }
   }
 
+  Future _submitIngredients(int orderId) async {
+    if (selectedDishes.isEmpty) {
+      CustomToast.showToastError(context, description: 'Vui lòng chọn món');
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    await _getInvoiceImage(selectedDishes, orderId);
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
   Future submit(TableStatus roomType,
       {bool isPay = false, bool isIngredient = false}) async {
     final isReservation = roomType == TableStatus.preOrder;
@@ -818,8 +734,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
           (request) => request.updateTableReservation(orderId!, orderPayload));
       CustomToast.showToastSuccess(context,
           description: 'Thanh toán thành công');
-      _socketManager.sendEvent('user', {'user_id': Auth.user<User>()!.id});
-
       Navigator.of(context).pop();
       tempData['items'] = selectedItems.map((item) {
         return {
@@ -837,22 +751,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
               : [],
         };
       }).toList();
-      routeTo(OrderInvoicePage.path, data: {
-        'id': orderId,
-        'showCreate': false,
-        'order_type': 1,
-        'invoice_id': invoiceId,
-        'customer_id': selectedCustomerId,
-        'name': selectedCustomer?.name,
-        'phone': selectedCustomer?.phone,
-        'address': _formKey.currentState?.value['address'],
-        'status_order': orderPayload['status_order'],
-        'count_item': selectedItems.length,
-        'payment_type': _formKey.currentState?.value['payment_type'],
-        'order_service_fee':
-            featuresConfig['other_fee'] != true ? [] : otherFee,
-        'temp_data': tempData,
-      });
     } catch (e) {
       CustomToast.showToastError(context, description: getResponseError(e));
     } finally {
@@ -904,7 +802,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
       orderIdIngre = res['id'];
       orderCode = res['code'] ?? '';
       if (isPay) {
-        _socketManager.sendEvent('user', {'user_id': Auth.user<User>()!.id});
         CustomToast.showToastSuccess(context,
             description: 'Thanh toán thành công');
         Navigator.of(context).pop();
@@ -926,23 +823,7 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
           };
         }).toList();
         tempData['code'] = res['code'];
-        routeTo(OrderInvoicePage.path, data: {
-          'id': res['id'],
-          'showCreate': false,
-          'order_type': 1,
-          'invoice_id': invoiceId,
-          'is_beverage': true,
-          'customer_id': selectedCustomerId,
-          'name': selectedCustomer?.name,
-          'phone': selectedCustomer?.phone,
-          'address': _formKey.currentState?.value['address'],
-          'status_order': orderPayload['status_order'],
-          'count_item': selectedItems.length,
-          'payment_type': _formKey.currentState?.value['payment_type'],
-          'order_service_fee':
-              featuresConfig['other_fee'] != true ? [] : otherFee,
-          'temp_data': tempData,
-        });
+        pop();
       } else if (!isIngredient) {
         Navigator.of(context).pop();
         if (buttonType == 'create_order') {
@@ -951,6 +832,8 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
       }
       clearAllData();
     } catch (e) {
+      log(e.toString());
+
       CustomToast.showToastError(context, description: getResponseError(e));
     } finally {
       setState(() {
@@ -1008,129 +891,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
     });
   }
 
-  Future<List<Customer>> _fetchCustomers(String search) async {
-    try {
-      final items = await api<CustomerApiService>(
-          (request) => request.listCustomerV2(search));
-
-      return items;
-    } catch (e) {
-      String errorMessage = getResponseError(e);
-      CustomToast.showToastError(context, description: errorMessage);
-      return [];
-    }
-  }
-
-  Future<void> _bootstrap() async {
-    loadingNotifier.value = true;
-    try {
-      if (mounted) setState(() {});
-      await Future.wait([
-        _setupUsb(),
-        // if(_usbReady == true ) _autoConnectSavedPrinter(),
-      ]);
-    } catch (e, st) {
-      CustomToast.showToastError(context, description: e.toString());
-    } finally {
-      setState(() {
-        loadingNotifier.value = false;
-      });
-    }
-  }
-
-  Future<void> _prepare() async {
-    _profile ??= await CapabilityProfile.load(name: 'default');
-
-    final paperWidthPx =
-        selectedPrinter1?.paperSize == PaperSize.mm58 ? 384 : 576;
-
-    final processed = await compute(
-        resizeIsolate,
-        ResizeParams(
-          base64Decode(imageBase64Decode),
-          paperWidthPx,
-        ));
-
-    final gen = Generator(PaperSize.mm58, _profile!);
-    final image = img.decodeImage(processed)!;
-    _cachedPrintBytes = [
-      ...gen.imageRaster(image, align: PosAlign.left),
-      ...gen.cut(),
-    ];
-  }
-
-  Future<void> _autoConnectSavedPrinter() async {
-    final sp = await getFirstPrinterOrAdd(context);
-    selectedPrinter1 = sp;
-
-    if (sp == null) return;
-
-    switch (sp.typePrinter) {
-      case PrinterType.bluetooth:
-        await _connectBluetooth(sp);
-        break;
-      case PrinterType.network:
-        await _connectTcp(sp);
-        break;
-      default:
-        break;
-    }
-  }
-
-  Future<void> _connectBluetooth(PrinterModel p) async {
-    await printerManager.connect(
-      type: PrinterType.bluetooth,
-      model: BluetoothPrinterInput(
-        name: p.deviceName,
-        address: p.address!,
-        isBle: p.isBle ?? false,
-        autoConnect: false,
-      ),
-    );
-    _currentBluetoothStatus = BTStatus.connected;
-  }
-
-  Future<void> _connectTcp(PrinterModel p) async {
-    await printerManager.connect(
-      type: PrinterType.network,
-      model: TcpPrinterInput(ipAddress: p.address!),
-    );
-  }
-
-  Future<void> _setupUsb() async {
-    try {
-      await _usbService.scanUsb().timeout(_usbTimeout,
-          onTimeout: () => throw Exception('USB scan timeout'));
-
-      await _usbService.connectUsb().timeout(_usbTimeout,
-          onTimeout: () => throw Exception('USB connect timeout'));
-
-      usbReady.value = true;
-      _usbReady = true;
-      CustomToast.showToastSuccess(context, description: 'USB sẵn sàng');
-    } catch (e) {
-      usbReady.value = false;
-      _usbReady = false;
-    }
-  }
-
-  Future _submitIngredients(int orderId) async {
-    if (selectedDishes.isEmpty) {
-      CustomToast.showToastError(context, description: 'Vui lòng chọn món');
-      return;
-    }
-    setState(() {
-      _isLoading = true;
-    });
-    if (isConnectedPrinterUsb) {
-      await _getInvoiceImage(selectedDishes, orderId);
-    }
-    isConnectedPrinterUsb ? printUsb() : printOther(selectedDishes, orderId);
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
   Future<void> _getInvoiceImage(
       List<Map<String, dynamic>> selectedDishes, int orderId) async {
     IngredientApi apiIngre = IngredientApi();
@@ -1149,112 +909,15 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
     } catch (e) {}
   }
 
-  Future printUsb() async {
-    loadingNotifier.value = true;
-    // await _getInvoiceImage();
-    await _prepare();
-    if (!_usbReady) {
-      loadingNotifier.value = false;
-      CustomToast.showToastError(context, description: 'USB chưa sẵn sàng');
-      return;
-    }
-    if (_cachedPrintBytes == null) {
-      loadingNotifier.value = false;
-      CustomToast.showToastError(context,
-          description: 'Chưa chuẩn bị dữ liệu in xong vui lòng thử lại');
-      return;
-    }
-    try {
-      await _usbService.printUsb(_cachedPrintBytes!);
-      CustomToast.showToastSuccess(context,
-          description: 'Báo chế biến thành công');
-    } catch (e) {
-      CustomToast.showToastError(context, description: e.toString());
-    } finally {
-      loadingNotifier.value = false;
-    }
-  }
-
-  Future printOther(
-      List<Map<String, dynamic>> selectedDishes, int orderId) async {
-    Map<String, dynamic> data = {
-      'code': orderCode,
-      'room_name': roomName,
-      'area_name': areaName,
-      'items': selectedDishes,
-    };
-    try {
-      if (selectedPrinter1 != Null) {
-        List<int> bytesPrinterCmdPre = [];
-        if (selectedPrinter1!.commandType == 'esc') {
-          bytesPrinterCmdPre = await genIngredientTicket(
-            data,
-            selectedPrinter1?.paperSize ?? PaperSize.mm80,
-          );
-        } else {
-          bytesPrinterCmdPre = await genTsplCommand(imageHtmlContent,
-              paperSize: selectedPrinter1!.paperSize!);
-        }
-        await sendToPrinter(bytesPrinterCmdPre, selectedPrinter1);
-      }
-    } catch (e) {
-    } finally {
-      await _getInvoiceImage(selectedDishes, orderId);
-    }
-  }
-
-  Future<void> printTsplLabel() async {
-    if (selectedItems.isEmpty) {
-      CustomToast.showToastError(context, description: 'Vui lòng chọn món');
-      return;
-    }
-    if (selectedPrinter2 == null || selectedPrinter2!.commandType != 'tsc') {
-      CustomToast.showToastError(context,
-          description: 'Chưa cài đặt máy in tem');
-      return;
-    }
-    setState(() {
-      tempPrinting = true;
-    });
-    tempData['items'] = selectedItems.map((item) {
-      return {
-        'name': item.name,
-        'price': num.parse((item.txtPrice.text).replaceAll('.', '')),
-        'quantity': item.quantity,
-        'toppings': (item.toppings)
-            .map((t) => {
-                  'name': t.name,
-                  'quantity': t.quantity,
-                })
-            .toList(),
-        'notes': (item.productNotes != null && item.productNotes!.isNotEmpty)
-            ? item.productNotes?.map((e) => e['name']).toList()
-            : [],
-      };
-    }).toList();
-    try {
-      List<int> bytes = await genTsplCommandTextAsImage(
-        tempData,
-        selectedPrinter2?.pageSize?.getValue() ?? 1,
-      );
-      await sendToPrinter(bytes, selectedPrinter2);
-      CustomToast.showToastSuccess(context, description: 'In tem thành công');
-    } catch (e) {
-      CustomToast.showToastError(context, description: e.toString());
-    } finally {
-      setState(() {
-        tempPrinting = false;
-      });
-    }
-  }
-
   dynamic getOrderPayloadFromForm(TableStatus roomType, {bool isPay = false}) {
-    DateTime? createDate = _formKey.currentState!.value['create_date'];
+    DateTime? createDate =
+        _formKey.currentState?.value['create_date'] ?? DateTime.now();
 
-    DateTime dateTime = _formKey.currentState!.value['date_time'];
-    final date = dateTime.toIso8601String().split('T')[0];
+    DateTime? dateTime =
+        _formKey.currentState?.value['date_time'] ?? DateTime.now();
+    final date = dateTime?.toIso8601String().split('T')[0];
     final hour =
-        dateTime.toIso8601String().split('T')[1].split('.')[0].substring(0, 5);
+        dateTime?.toIso8601String().split('T')[1].split('.')[0].substring(0, 5);
     Map<String, dynamic> orderPayload = {
       'type': 3,
       'point': stringToInt(_formKey.currentState!.value['point']) ?? 0,
@@ -1265,9 +928,7 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
           : widget.data()?['note'],
       'order_service_fee': featuresConfig['other_fee'] != true ? [] : otherFee,
       'is_retail': !isWholesale,
-      'phone': selectedCustomer?.phone ?? '',
       'discount_type': _discountType.getValueRequest(),
-      'name': selectedCustomer?.name ?? '',
       'customer_id': selectedCustomerId ?? null,
       'create_date': createDate != null
           ? DateFormat('yyyy/MM/dd HH:mm:ss').format(createDate)
@@ -1428,11 +1089,12 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
       }
     }
 
-    DateTime dateTime = _formKey.currentState!.value['date_time'];
+    DateTime dateTime =
+        _formKey.currentState?.value['date_time'] ?? DateTime.now();
     final date = dateTime.toIso8601String().split('T')[0];
     final hour =
         dateTime.toIso8601String().split('T')[1].split('.')[0].substring(0, 5);
-    DateTime? createDate = _formKey.currentState!.value['create_date'];
+    DateTime? createDate = _formKey.currentState?.value['create_date'];
     Map<String, dynamic> orderPayload = {
       'type': 3, // 1: order, 2: storage
       'room_id': roomId,
@@ -1445,8 +1107,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
       'time_intend': _formKey.currentState!.value['time_intend'],
       'is_retail': !isWholesale,
       'discount_type': _discountType.getValueRequest(),
-      'phone': selectedCustomer?.phone ?? '',
-      'name': selectedCustomer?.name ?? '',
       'customer_id': selectedCustomerId ?? null,
       'address':
           _formKey.currentState!.value['address'] ?? widget.data()?['address'],
@@ -1786,36 +1446,14 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
         ),
         title: showPay
             ? Text(
-                text('table_reserve_pay_title', 'Thanh toán bàn'),
+                'Thanh toán bàn',
                 style: TextStyle(fontSize: 20),
               )
             : Text(
-                text('table_reserve_create_title', 'Đặt bàn'),
+                'Đặt bàn',
                 style: TextStyle(fontSize: 20),
               ),
         actions: [
-          if (!isEditing)
-            SizedBox(
-              width: 45,
-              child: IconButton(
-                icon: Image.asset(
-                  getImageAsset('list_icon.png'),
-                ),
-                onPressed: () {
-                  routeTo(ListOrderPage.path);
-                },
-              ),
-            ),
-          IconButton(
-            icon: _isShowingScan
-                ? Icon(FontAwesomeIcons.times)
-                : Icon(FontAwesomeIcons.barcode, size: 30),
-            onPressed: () {
-              setState(() {
-                _isShowingScan = !_isShowingScan;
-              });
-            },
-          ),
           IconButton(
             icon: Icon(Icons.more_horiz, size: 30),
             onPressed: () {
@@ -1844,39 +1482,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (_isShowingScan)
-                            Column(
-                              children: [
-                                SizedBox(
-                                  height: 250,
-                                  child: ProductScan(
-                                    onDetectProduct: (product, weight) {
-                                      if (product != null) {
-                                        setState(() {
-                                          _scanError = null;
-                                          addItem(product, stringToInt(weight));
-                                        });
-                                      } else {
-                                        setState(() {
-                                          _scanError =
-                                              'Không tìm thấy sản phẩm';
-                                        });
-                                      }
-                                    },
-                                  ),
-                                ),
-                                SizedBox(height: 20),
-                                if (_scanError != null)
-                                  Text(
-                                    _scanError!,
-                                    style: TextStyle(
-                                        color: ThemeColor.get(context)
-                                            .primaryAccent),
-                                  ),
-                              ],
-                            )
-                          else
-                            buildCustomerDetail(),
                           Container(
                             padding: EdgeInsets.symmetric(
                                 vertical: 0.0, horizontal: 6.0),
@@ -1967,27 +1572,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
             SizedBox(height: 5),
             Row(
               children: [
-                if (currentRoomType == TableStatus.free) ...[
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        backgroundColor: Colors.blue,
-                      ),
-                      onPressed: () async {
-                        printTsplLabel();
-                      },
-                      icon: Icon(Icons.local_printshop, color: Colors.white),
-                      label: Text(
-                        "In tem",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                ],
                 Expanded(
                   child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -2382,7 +1966,7 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
                               ),
                               SizedBox(width: 4),
                               Text(
-                                'Đặt ${text('_table_title', 'bàn')}',
+                                'Đặt bàn',
                                 style: TextStyle(color: Colors.white),
                               ),
                             ],
@@ -2464,128 +2048,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
         ),
       ],
     );
-  }
-
-  Widget buildInfoCustomer() {
-    if (featuresConfig['customer_info'] != true) {
-      return SizedBox();
-    }
-    return Column(
-      children: [
-        SizedBox(height: 20),
-        CustomerSearchOrder(
-          multiKey: selectMultiKeyCustomer,
-          key: _multiSelectKeyCustomer,
-          onSelect: (Customer? selected) {
-            _handleCustomerSelected(selected);
-            setState(() {});
-          },
-          selectedCustomer: selectedCustomer,
-        ),
-        if (featuresConfig['customer_address'] == true)
-          Column(
-            children: [
-              SizedBox(height: 10.0),
-              FormBuilderTextField(
-                name: 'address',
-                keyboardType: TextInputType.streetAddress,
-                initialValue: widget.data()?['address'] ?? '',
-                decoration: InputDecoration(
-                  labelText: 'Địa chỉ',
-                ),
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-
-  void _handleCustomerSelected(Customer? customer) {
-    selectedCustomer = customer;
-    customerPoint = customer?.point ?? 0;
-    selectedCustomerId = customer?.id;
-    _formKey.currentState!.patchValue({
-      'address': selectedCustomer?.address,
-    });
-  }
-
-  Widget buildCustomerDetail() {
-    return Column(children: [
-      buildInfoCustomer(),
-      SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
-            child: FormBuilderDateTimePicker(
-              format: DateFormat('dd/MM/yyyy HH:mm'),
-              name: 'date_time',
-              inputType: InputType.both,
-              decoration: InputDecoration(
-                labelText: 'Ngày đặt',
-              ),
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              initialValue: DateTime.now(),
-            ),
-          ),
-        ],
-      ),
-      SizedBox(height: 12),
-      if (featuresConfig['customer_quantity'] == true)
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Số lượng khách',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  SizedBox(height: 4),
-                  FormBuilderField(
-                    name: 'number_customer',
-                    builder: (FormFieldState<dynamic> field) {
-                      return QuantityFormField(
-                        min: 1,
-                        initialValue:
-                            isEditing ? (editData['number_customer'] ?? 1) : 1,
-                        onChanged: (value) {
-                          field.didChange(value);
-                          return;
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Thời gian dự kiến (phút)',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  SizedBox(height: 4),
-                  FormBuilderField(
-                    name: 'time_intend',
-                    builder: (FormFieldState<dynamic> field) {
-                      return QuantityFormField(
-                        min: 1,
-                        max: 9999,
-                        initialValue: editData?['time_intend'] ?? 60,
-                        onChanged: (value) {
-                          field.didChange(value);
-                          return;
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        )
-    ]);
   }
 
   void showMenuItems(context) {
@@ -3435,23 +2897,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
     );
   }
 
-  Widget buildPopupCustomer(
-      BuildContext context, Customer customer, bool isSelected) {
-    return ListTile(
-      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-      leading: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Icon(Icons.contact_page),
-        ],
-      ),
-      title: Text("${customer.name}"),
-      trailing: Text("SĐT: ${customer.phone}"),
-      subtitle: Text(customer.address ?? ''),
-    );
-  }
-
   Widget buildListItem() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3663,50 +3108,6 @@ class _BeverageReservationPageState extends NyState<BeverageReservationPage> {
         );
       },
     );
-  }
-
-  Future sendToPrinter(List<int> bytes, PrinterModel? selectedPrinter) async {
-    if (selectedPrinter == null) return;
-    pendingTask = bytes;
-    var printer = selectedPrinter;
-
-    // connect
-    switch (printer.typePrinter) {
-      case PrinterType.bluetooth:
-        await printerManager.connect(
-            type: PrinterType.bluetooth,
-            model: BluetoothPrinterInput(
-                name: printer.deviceName,
-                address: printer.address!,
-                isBle: printer.isBle ?? false,
-                autoConnect: false));
-
-        if (_currentBluetoothStatus == BTStatus.connected) {
-          await Future.delayed(const Duration(milliseconds: 1000), () async {
-            await printerManager.send(type: printer.typePrinter!, bytes: bytes);
-            pendingTask = null;
-            await printerManager.disconnect(type: printer.typePrinter!);
-          });
-        }
-        break;
-      case PrinterType.network:
-        final connectedTCP = await printerManager.connect(
-            type: PrinterType.network,
-            model: TcpPrinterInput(ipAddress: printer.address!));
-        if (!connectedTCP)
-          CustomToast.showToastError(context, description: "Lỗi kết nối");
-
-        await Future.delayed(const Duration(milliseconds: 1000), () async {
-          await printerManager.send(type: printer.typePrinter!, bytes: bytes);
-          pendingTask = null;
-          await printerManager.disconnect(type: printer.typePrinter!);
-        });
-        break;
-      default:
-        CustomToast.showToastError(context,
-            description: "Loại máy in không hỗ trợ");
-        return;
-    }
   }
 
   void filterNewFee() {

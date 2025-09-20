@@ -2,7 +2,9 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_app/app/models/user.dart';
+import 'package:flutter_app/resources/pages/add_storage_page.dart';
 import 'package:flutter_app/resources/pages/main_page.dart';
+import 'package:flutter_app/resources/pages/manage_table/manage_table_page.dart';
 import 'package:flutter_app/resources/pages/order_list_all_page.dart';
 import 'package:flutter_app/resources/pages/product/list_product_page.dart';
 import 'package:nylo_framework/nylo_framework.dart';
@@ -89,13 +91,11 @@ extension DashboardItemExtension on DashboardItem {
   String? get routePath {
     switch (this) {
       case DashboardItem.Table:
-        return MainPage.path;
+        return ManageTablePage.path;
       case DashboardItem.OrderList:
         return OrderListAllPage.path;
       case DashboardItem.OrderPurchase:
-        return MainPage.path;
-      case DashboardItem.OrderSale:
-        return MainPage.path;
+        return AddStoragePage.path;
       case DashboardItem.Storage:
         return ListProductPage.path;
       case DashboardItem.CashBook:
@@ -116,7 +116,6 @@ List<DashboardItem> getDashboardItems() {
         DashboardItem.Table,
         DashboardItem.OrderList,
         DashboardItem.OrderPurchase,
-        DashboardItem.Service,
         DashboardItem.Storage,
         // DashboardItem.Report,
       ];

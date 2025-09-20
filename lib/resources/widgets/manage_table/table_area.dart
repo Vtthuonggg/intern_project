@@ -393,6 +393,7 @@ class _TableAreaState extends State<TableArea> {
                           table: table,
                           listRoomService: widget.listService,
                           onTapMoveTable: () => widget.onTapMoveTable(table),
+                          cancelTable: () {},
                         ))
                     .toList(),
                 buildAddTableButton()

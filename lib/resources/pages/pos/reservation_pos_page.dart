@@ -3,11 +3,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_app/app/controllers/controller.dart';
 import 'package:flutter_app/app/models/storage_item.dart';
-import 'package:flutter_app/app/providers/table_notifier.dart';
-import 'package:flutter_app/bootstrap/helpers.dart';
 import 'package:flutter_app/resources/pages/pos/create_order_pos.dart';
 import 'package:flutter_app/resources/pages/pos/select_menu_pos.dart';
-import 'package:flutter_app/resources/widgets/manage_table/table_item.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 
 class ReservationPosPage extends NyStatefulWidget {
@@ -31,28 +28,15 @@ class _ReservationPosPageState extends NyState<ReservationPosPage> {
   List<StorageItem> selectedItems = [];
   final GlobalKey<CreateOrderPosPageState> createOrderPosKey =
       GlobalKey<CreateOrderPosPageState>();
-  late TableNotifier _tableNotifier;
 
   @override
   init() async {
-    _tableNotifier = TableNotifier();
-    _tableNotifier.addListener(_onTableNotifierUpdate);
     super.init();
   }
 
   @override
   void dispose() {
     super.dispose();
-    _tableNotifier.removeListener(_onTableNotifierUpdate);
-  }
-
-  void _onTableNotifierUpdate() async {
-    if (_tableNotifier.shouldOrderPosRefresh &&
-        _tableNotifier.targetRoomIdPos == roomId &&
-        mounted) {
-      createOrderPosKey.currentState?.reloadEditData();
-      _tableNotifier.refreshOrderPosCompleted();
-    }
   }
 
   @override
