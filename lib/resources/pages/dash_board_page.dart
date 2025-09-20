@@ -2,6 +2,7 @@ import 'package:draggable_fab/draggable_fab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_app/app/utils/dashboard.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
+import 'package:flutter_app/config/common_define.dart';
 import 'package:flutter_app/config/constant.dart';
 import 'package:flutter_app/resources/widgets/gradient_appbar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -95,6 +96,8 @@ class _DashboardPageState extends State<DashboardPage> {
                             onTab: () {
                               if (item.routePath != null) {
                                 routeTo(item.routePath!);
+                              } else {
+                                customAction(item);
                               }
                             },
                           );
@@ -108,6 +111,16 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
+  }
+
+  void customAction(DashboardItem item) {
+    switch (item) {
+      case DashboardItem.OrderList:
+        gotoTabPage(1);
+
+      default:
+        null;
+    }
   }
 
   Widget buildItem(dynamic iconData, String title,

@@ -10,6 +10,8 @@ import 'package:flutter_app/app/utils/getters.dart';
 import 'package:flutter_app/app/utils/message.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
 import 'package:flutter_app/resources/pages/custom_toast.dart';
+import 'package:flutter_app/resources/pages/product/detail_product_page.dart';
+import 'package:flutter_app/resources/pages/product/edit_product_page.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';

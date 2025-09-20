@@ -9,6 +9,7 @@ import 'package:flutter_app/app/utils/formatters.dart';
 import 'package:flutter_app/app/utils/message.dart';
 import 'package:flutter_app/bootstrap/helpers.dart';
 import 'package:flutter_app/resources/dashed_divider.dart';
+import 'package:flutter_app/resources/pages/add_storage_page.dart';
 import 'package:flutter_app/resources/pages/custom_toast.dart';
 import 'package:flutter_app/resources/pages/order/detail_order_page.dart';
 import 'package:flutter_app/resources/pages/order_list_all_page.dart';

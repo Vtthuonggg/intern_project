@@ -83,36 +83,14 @@ class _DetailProductPageState extends NyState<DetailProductPage> {
             IconButton(
               icon: Icon(Icons.edit),
               onPressed: () {
-                if (Auth.user<User>()?.careerType != CareerType.other) {
-                  if (item?['type'] == 1) {
-                    routeTo(EditProductPage.path, data: {
-                      'id': widget.data()?['id'],
-                      'store_id': storeId,
-                    }, onPop: (value) async {
-                      _future = _fetchProduct();
-                      featuresConfig = await getProductConfig();
-                      setState(() {});
-                    });
-                  } else {
-                    routeTo(EditProductServicePage.path, data: {
-                      'id': widget.data()?['id'],
-                      'store_id': storeId,
-                    }, onPop: (value) {
-                      setState(() {
-                        _future = _fetchProduct();
-                      });
-                    });
-                  }
-                } else {
-                  routeTo(EditProductPage.path, data: {
-                    'id': widget.data()?['id'],
-                    'store_id': storeId,
-                  }, onPop: (value) async {
-                    _future = _fetchProduct();
-                    featuresConfig = await getProductConfig();
-                    setState(() {});
-                  });
-                }
+                routeTo(EditProductPage.path, data: {
+                  'id': widget.data()?['id'],
+                  'store_id': storeId,
+                }, onPop: (value) async {
+                  _future = _fetchProduct();
+                  featuresConfig = await getProductConfig();
+                  setState(() {});
+                });
               },
             ),
         ],

@@ -3,6 +3,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_app/app/models/user.dart';
 import 'package:flutter_app/resources/pages/main_page.dart';
+import 'package:flutter_app/resources/pages/order_list_all_page.dart';
+import 'package:flutter_app/resources/pages/product/list_product_page.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 
 enum DashboardItem {
@@ -21,7 +23,7 @@ enum DashboardItem {
 }
 
 extension DashboardItemExtension on DashboardItem {
-  String getTitle() {
+  String get name {
     switch (this) {
       case DashboardItem.Table:
         return 'Bàn';
@@ -89,27 +91,17 @@ extension DashboardItemExtension on DashboardItem {
       case DashboardItem.Table:
         return MainPage.path;
       case DashboardItem.OrderList:
-        return MainPage.path;
+        return OrderListAllPage.path;
       case DashboardItem.OrderPurchase:
         return MainPage.path;
       case DashboardItem.OrderSale:
         return MainPage.path;
-      case DashboardItem.Service:
-        return MainPage.path;
       case DashboardItem.Storage:
-        return MainPage.path;
+        return ListProductPage.path;
       case DashboardItem.CashBook:
-        return MainPage.path;
-      case DashboardItem.Employee:
-        return MainPage.path;
-      case DashboardItem.Customer:
-        return MainPage.path;
-      case DashboardItem.Supplier:
-        return MainPage.path;
       case DashboardItem.Report:
         return MainPage.path;
-      case DashboardItem.TimekeepingCreate:
-        return MainPage.path;
+
       default:
         return null;
     }
@@ -123,29 +115,12 @@ List<DashboardItem> getDashboardItems() {
       return [
         DashboardItem.Table,
         DashboardItem.OrderList,
-        DashboardItem.OrderSale,
+        DashboardItem.OrderPurchase,
         DashboardItem.Service,
         DashboardItem.Storage,
-        DashboardItem.CashBook,
-        DashboardItem.Employee,
-        DashboardItem.Customer,
-        DashboardItem.Supplier,
-        DashboardItem.Report,
+        // DashboardItem.Report,
       ];
-    case 3:
-      return [
-        DashboardItem.Table,
-        DashboardItem.OrderList,
-        DashboardItem.OrderSale,
-        DashboardItem.Service,
-        DashboardItem.Storage,
-        DashboardItem.CashBook,
-        DashboardItem.Employee,
-        DashboardItem.Customer,
-        DashboardItem.Supplier,
-        DashboardItem.Report,
-        DashboardItem.TimekeepingCreate,
-      ];
+
     default:
       return [];
   }

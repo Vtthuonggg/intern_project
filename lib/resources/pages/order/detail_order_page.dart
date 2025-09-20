@@ -1940,19 +1940,8 @@ class _DetailOrderPageState extends NyState<DetailOrderPage> {
       color: Colors.white,
       icon: Icon(Icons.more_vert),
       onSelected: (String value) {
-        if (value == 'clone') {
-          orderData['is_clone'] = true;
-          routeTo(EditOrderPage.path, data: orderData, onPop: (data) {
-            _future = fetchDetail();
-          });
-        }
         if (value == 'delete') {
           _deleteOrder();
-        }
-        if (value == 'edit') {
-          routeTo(EditOrderPage.path, data: orderData, onPop: (data) {
-            _future = fetchDetail();
-          });
         }
       },
       itemBuilder: (BuildContext context) => items,

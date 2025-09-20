@@ -46,6 +46,19 @@ class OrderApiService extends BaseApiService {
     );
   }
 
+  Future updateSuccessOrder(dynamic payload, int id) async {
+    return await network(
+      request: (request) =>
+          request.put("/order/update-success/$id", data: payload),
+      handleFailure: (error) {
+        throw error;
+      },
+      handleSuccess: (response) async {
+        return response.data["data"];
+      },
+    );
+  }
+
   Future getReceiptHtml(int orderId, int? invoiceType) async {
     String endPoint = 'order/print';
 
@@ -118,12 +131,15 @@ class OrderApiService extends BaseApiService {
 
   Future listOrderV3(int page, int size, DateTimeRange? rage, String? search,
       String? sort, List<int> statusOrder, List<int> statusPayment,
-      {dynamic customerId, String? dateType = 'created_at'}) async {
+      {dynamic customerId,
+      int? storeId,
+      String? dateType = 'created_at'}) async {
     Map<String, dynamic> queryParameters = {
       "per_page": size,
       "page": page,
       "type": 1,
       "customer_id": customerId == -1 ? "null" : customerId,
+      "store_id": storeId,
       "date_type": dateType,
     };
 
@@ -582,6 +598,7 @@ class OrderApiService extends BaseApiService {
         throw error;
       },
       handleSuccess: (response) async {
+        log(response.data.toString());
         return response.data;
       },
     );

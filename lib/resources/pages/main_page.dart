@@ -89,7 +89,6 @@ class _MainPageState extends NyState<MainPage> with WidgetsBindingObserver {
   @override
   init() async {
     super.init();
-    await GlobalConfiguration().loadFromAsset("app_config");
     await checkAndSetDevice(Auth.user(), context);
   }
 
